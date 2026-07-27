@@ -470,7 +470,10 @@ function renderPortfolio() {
       <div class="row-btns">
         <button class="btn btn-ghost" id="save-image-btn">🖼 이미지로 저장</button>
         <button class="btn btn-ghost" id="print-btn">🖨 인쇄하기</button>
-        ${progress.mode === 20 ? '<button class="btn" id="view-ranking-btn">🏆 랭킹 보기</button>' : ''}
+        <button class="btn" id="view-ranking-btn">🏆 랭킹 보기</button>
+      </div>
+      <div class="row-btns">
+        <a class="btn btn-ghost" href="index.html">🏠 메인으로</a>
       </div>
     </div>
     <div class="portfolio-cards" id="portfolio-cards">${cardsHtml}</div>
@@ -514,7 +517,10 @@ function renderRanking() {
       <button class="btn btn-ghost" data-tab="all">전체</button>
     </div>
     <div id="rank-list">불러오는 중...</div>
-    <button class="btn btn-ghost" id="back-portfolio-btn">← 모음집으로</button>
+    <div class="row-btns">
+      <button class="btn btn-ghost" id="back-portfolio-btn">← 모음집으로</button>
+      <a class="btn btn-ghost" href="index.html">🏠 메인으로</a>
+    </div>
   `;
   root.appendChild(wrap);
 
