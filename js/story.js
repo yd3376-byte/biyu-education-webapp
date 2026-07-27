@@ -226,8 +226,8 @@ function render() {
   root.innerHTML = '';
 
   if (progress.phase === 'coda' || progress.phase === 'done') {
-    bgmDark.pause();
-    bgmReunion.pause();
+    // bgm-dark는 정문 크로스페이드 때 이미 페이드아웃되어 멈춰 있다.
+    // bgm-reunion은 여기서 끊지 않고 엔딩까지 계속 이어서 재생한다.
     document.body.classList.add('story-bright');
   } else {
     tryPlayBgm();
