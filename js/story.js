@@ -34,6 +34,12 @@ const notebookList = document.getElementById('notebook-list');
 
 document.getElementById('notebook-open').addEventListener('click', openNotebook);
 document.getElementById('notebook-close').addEventListener('click', closeNotebook);
+document.getElementById('story-reset-btn').addEventListener('click', () => {
+  if (confirm('지금까지 진행 상황을 지우고 처음부터 다시 시작할까요?')) {
+    localStorage.removeItem(PROGRESS_KEY);
+    location.reload();
+  }
+});
 
 async function init() {
   identity = await ensureIdentity();
