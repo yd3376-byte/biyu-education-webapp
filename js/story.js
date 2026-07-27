@@ -67,13 +67,11 @@ bgmToggleBtn.addEventListener('click', () => {
   if (bgmMuted) {
     bgmDark.pause();
     bgmReunion.pause();
-  } else if (progress.phase !== 'coda' && progress.phase !== 'done') {
-    if (activeTrack === 'reunion') {
-      bgmReunion.volume = BGM_VOLUME;
-      bgmReunion.play().catch(() => {});
-    } else {
-      tryPlayBgm();
-    }
+  } else if (activeTrack === 'reunion') {
+    bgmReunion.volume = BGM_VOLUME;
+    bgmReunion.play().catch(() => {});
+  } else {
+    tryPlayBgm();
   }
 });
 
@@ -88,6 +86,13 @@ function tryPlayBgm() {
     document.addEventListener('click', () => tryPlayBgm(), { once: true });
   });
 }
+
+// 자동재생 정책, 네트워크 버퍼링 등으로 재생 중 예기치 않게 멈추면 즉시 재시도한다.
+bgmReunion.addEventListener('pause', () => {
+  if (!bgmMuted && activeTrack === 'reunion' && !bgmReunion.ended) {
+    bgmReunion.play().catch(() => {});
+  }
+});
 
 function crossfadeToReunion() {
   activeTrack = 'reunion';
