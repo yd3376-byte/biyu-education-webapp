@@ -1,0 +1,232 @@
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap');
+
+:root {
+  --sunset:   #F2A65A;
+  --dusk:     #1B2A41;
+  --cream:    #FFF6E9;
+  --ink:      #2E2A26;
+  --cat:      #8D8478;
+  --leaf:     #6FA287;
+  --warn:     #D46A5F;
+  --radius:   16px;
+  --shadow:   0 6px 20px rgba(0,0,0,.12);
+
+  --font-body: 'Gowun Dodum', sans-serif;
+  --font-title: 'Jua', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .title {
+  font-family: var(--font-title);
+  font-weight: normal;
+  margin: 0 0 .5em;
+}
+
+img { max-width: 100%; display: block; }
+
+button {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+}
+
+input, textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+a { color: inherit; }
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 16px;
+  position: relative;
+}
+
+/* ---------- 공통 컴포넌트 ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  background: var(--sunset);
+  color: var(--ink);
+  font-family: var(--font-title);
+  font-size: 1.05rem;
+  box-shadow: var(--shadow);
+  transition: transform .15s ease;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.btn.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: none;
+  border: 2px solid var(--sunset);
+}
+.btn.btn-success { background: var(--leaf); color: #fff; }
+.btn.btn-warn { background: var(--warn); color: #fff; }
+
+.card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.field label {
+  font-size: .95rem;
+  color: var(--cat);
+}
+.field input, .field textarea {
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: calc(var(--radius) / 2);
+  border: 2px solid #E7DFD3;
+  background: #fff;
+  color: var(--ink);
+}
+.field input:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--sunset);
+}
+.field .hint { font-size: .85rem; color: var(--cat); }
+.field .error { font-size: .85rem; color: var(--warn); }
+
+/* ---------- 토스트 ---------- */
+
+#toast-root {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+  width: min(92%, 480px);
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: calc(var(--radius) / 2);
+  box-shadow: var(--shadow);
+  font-size: .95rem;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.toast-error { background: var(--warn); }
+.toast.toast-success { background: var(--leaf); }
+
+/* ---------- 닉네임 헤더 ---------- */
+
+.nick-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: .95rem;
+  color: var(--cat);
+  padding: 8px 0;
+}
+.nick-header button {
+  background: none;
+  color: var(--sunset);
+  text-decoration: underline;
+  font-size: .9rem;
+  min-height: auto;
+  padding: 4px;
+}
+
+/* ---------- 모달(닉네임 입력 등) ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+  padding: 16px;
+}
+.modal {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  width: min(100%, 420px);
+  box-shadow: var(--shadow);
+}
+
+/* ---------- 장소 플레이스홀더 배경 ---------- */
+
+.place-bg {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.place-bg .place-bg-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255,255,255,.92);
+  font-family: var(--font-title);
+  text-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+.place-bg .place-bg-fallback .emoji { font-size: 2.4rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+@media (min-width: 768px) {
+  body { font-size: 18px; }
+}

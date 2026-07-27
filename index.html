@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>내일을 찾아서 — 비유로 만드는 여름 이야기</title>
+<link rel="stylesheet" href="css/base.css" />
+<style>
+  body {
+    background: linear-gradient(180deg, #F2A65A 0%, #E98C6B 45%, #1B2A41 100%);
+    min-height: 100vh;
+  }
+  .hub-title {
+    text-align: center;
+    color: #fff6e9;
+    padding-top: 24px;
+  }
+  .hub-title h1 { font-size: 2rem; text-shadow: 0 2px 10px rgba(0,0,0,.25); }
+  .hub-title p { margin: 0; opacity: .9; }
+
+  .hub-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 28px 0;
+  }
+  .hub-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .hub-card .icon { font-size: 2.2rem; flex: none; }
+  .hub-card .info { flex: 1; }
+  .hub-card .info .name { font-family: var(--font-title); font-size: 1.2rem; }
+  .hub-card .info .desc { font-size: .92rem; color: var(--cat); margin-top: 2px; }
+  .hub-card .badge {
+    flex: none;
+    font-family: var(--font-title);
+    font-size: .82rem;
+    background: var(--sunset);
+    color: var(--ink);
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+  .hub-card .time { flex: none; font-size: .8rem; color: var(--cat); margin-top: 4px; text-align: right; }
+
+  .hub-footer {
+    text-align: center;
+    padding: 16px 0 32px;
+  }
+  .hub-footer a {
+    color: #fff6e9;
+    font-size: .9rem;
+    text-decoration: underline;
+    opacity: .85;
+  }
+
+  .hub-nick-header span { color: #fff6e9; }
+  .hub-nick-header button { color: #fff6e9; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="nick-header hub-nick-header" id="nick-header"></div>
+
+    <div class="hub-title">
+      <h1>🐈 내일을 찾아서</h1>
+      <p>비유로 만드는 여름 이야기</p>
+    </div>
+
+    <div class="hub-cards">
+      <a class="hub-card card" href="story.html">
+        <div class="icon">🐈</div>
+        <div class="info">
+          <div class="name">① 내일을 찾아서</div>
+          <div class="desc">비유로 된 단서를 읽고 장소를 찾아가는 이야기</div>
+        </div>
+        <div>
+          <div class="badge">스토리</div>
+          <div class="time">약 10분</div>
+        </div>
+      </a>
+
+      <a class="hub-card card" href="practice.html">
+        <div class="icon">✏️</div>
+        <div class="info">
+          <div class="name">② 비유 표현 연습하기</div>
+          <div class="desc">문제를 풀고 점수와 랭킹에 도전해보자</div>
+        </div>
+        <div>
+          <div class="badge">퀴즈</div>
+          <div class="time">약 10분</div>
+        </div>
+      </a>
+
+      <a class="hub-card card" href="hide.html">
+        <div class="icon">📮</div>
+        <div class="info">
+          <div class="name">③ 쪽지 숨기기</div>
+          <div class="desc">학교 곳곳에 비유 힌트로 쪽지를 숨기고, 친구가 숨긴 쪽지도 찾아보자</div>
+        </div>
+        <div>
+          <div class="badge">만들기</div>
+          <div class="time">약 15분</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="hub-footer">
+      <a href="names.html">우리 반이 지어준 이름들 →</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { ensureIdentity, mountNickHeader } from './js/common.js';
+
+    (async () => {
+      await ensureIdentity();
+      mountNickHeader(document.getElementById('nick-header'));
+    })();
+  </script>
+</body>
+</html>

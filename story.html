@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>내일을 찾아서</title>
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/story.css" />
+</head>
+<body class="story-body">
+  <div class="cicada-layer" id="cicada">맴——————　맴——————　맴——————</div>
+
+  <div class="app">
+    <div class="nick-header" id="nick-header"></div>
+
+    <div class="story-top">
+      <div class="story-clock" id="story-clock">오전 8:20</div>
+      <button class="story-notebook-btn" id="notebook-open">📓 단서 수첩 (<span id="notebook-count">0</span>)</button>
+    </div>
+
+    <div id="story-root"></div>
+  </div>
+
+  <div class="notebook-panel" id="notebook-panel" hidden>
+    <div class="app" style="padding:0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 class="title">📓 단서 수첩</h2>
+        <button class="btn btn-ghost" id="notebook-close">닫기</button>
+      </div>
+      <div id="notebook-list"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/story.js"></script>
+</body>
+</html>

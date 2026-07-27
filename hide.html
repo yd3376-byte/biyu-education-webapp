@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>쪽지 숨기기</title>
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/hide.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="nick-header" id="nick-header"></div>
+    <h1 class="title hide-title">📮 쪽지 숨기기</h1>
+    <p class="hide-sub">비유 힌트로 쪽지를 숨기거나, 친구가 숨긴 쪽지를 찾아보자</p>
+    <div id="hide-root"></div>
+  </div>
+
+  <script type="module">
+    import { ensureIdentity, mountNickHeader } from './js/common.js';
+
+    const root = document.getElementById('hide-root');
+
+    function renderEntry() {
+      root.innerHTML = `
+        <div class="hide-entry">
+          <button class="card hide-entry-card" id="btn-create">
+            <div class="icon">🖊</div>
+            <div>
+              <div class="label">내가 쪽지 숨기러 가기</div>
+              <div class="desc">장소를 고르고 비유 힌트로 쪽지를 숨겨보자 (방 만들기)</div>
+            </div>
+          </button>
+          <button class="card hide-entry-card" id="btn-play">
+            <div class="icon">🔍</div>
+            <div>
+              <div class="label">친구가 숨긴 쪽지 찾으러 가기</div>
+              <div class="desc">학교 코드로 입장해서 쪽지를 찾아보자</div>
+            </div>
+          </button>
+        </div>
+        <a class="btn btn-ghost" style="display:block;text-align:center;margin-top:14px;" href="index.html">메인으로</a>
+      `;
+      root.querySelector('#btn-create').addEventListener('click', startCreate);
+      root.querySelector('#btn-play').addEventListener('click', () => startPlay(null));
+    }
+
+    async function startCreate() {
+      const { initCreate } = await import('./js/hide-create.js');
+      initCreate(root, { identity, onExit: renderEntry });
+    }
+
+    async function startPlay(roomCode) {
+      const { initPlay } = await import('./js/hide-play.js');
+      initPlay(root, { identity, roomCode, onExit: renderEntry });
+    }
+
+    let identity = null;
+
+    (async () => {
+      identity = await ensureIdentity();
+      mountNickHeader(document.getElementById('nick-header'));
+
+      const params = new URLSearchParams(location.search);
+      const roomParam = params.get('room');
+      if (roomParam) {
+        startPlay(roomParam);
+      } else {
+        renderEntry();
+      }
+    })();
+  </script>
+</body>
+</html>

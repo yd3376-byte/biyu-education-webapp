@@ -1,0 +1,9 @@
+[
+  {"id":"cafeteria","name":"급식실","color":"#E9B872","emoji":"🍚"},
+  {"id":"ground","name":"운동장","color":"#C7A17A","emoji":"🏃"},
+  {"id":"gym","name":"체육관","color":"#7C9EB2","emoji":"🏐"},
+  {"id":"library","name":"도서관","color":"#9C8AA5","emoji":"📚"},
+  {"id":"classroom","name":"교실","color":"#8FB08C","emoji":"🪑"},
+  {"id":"playground","name":"놀이터","color":"#E2946B","emoji":"🛝"},
+  {"id":"garden","name":"후문 화단","color":"#6FA287","emoji":"🌿"}
+]

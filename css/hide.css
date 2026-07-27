@@ -1,0 +1,171 @@
+.hide-title { text-align: center; margin: 12px 0 4px; }
+.hide-sub { text-align: center; color: var(--cat); margin-bottom: 20px; }
+
+.hide-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hide-entry-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+.hide-entry-card .icon { font-size: 2rem; }
+.hide-entry-card .label { font-family: var(--font-title); font-size: 1.1rem; }
+.hide-entry-card .desc { font-size: .88rem; color: var(--cat); margin-top: 2px; }
+
+/* 장소 선택 그리드 */
+.place-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.place-pick {
+  aspect-ratio: 4 / 3;
+  border: 3px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  overflow: hidden;
+}
+.place-pick.selected { border-color: var(--sunset); }
+.place-pick .place-bg-fallback .place-name { font-size: 1rem; }
+
+/* 핀 찍는 캔버스 */
+.pin-board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+.pin-marker {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  margin-top: -32px;
+  background: var(--warn);
+  color: #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-title);
+  box-shadow: var(--shadow);
+}
+.pin-marker span { transform: rotate(-45deg); }
+
+.pin-list { margin-top: 14px; }
+.pin-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.pin-list-item .pin-no {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--warn);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-title);
+  flex: none;
+}
+.pin-list-item .pin-text { flex: 1; font-size: .9rem; }
+.pin-list-item .pin-text .hint { color: var(--cat); }
+.pin-list-item button { background: none; color: var(--warn); min-height: auto; padding: 4px 8px; }
+
+/* 입력 시트 */
+.sheet-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: flex-end;
+  z-index: 900;
+}
+.sheet {
+  background: #fff;
+  width: 100%;
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px 18px 28px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* 완료 화면: 방 코드 */
+.room-code-card {
+  text-align: center;
+  background: linear-gradient(160deg, var(--sunset), #E98C6B);
+  color: var(--ink);
+}
+.room-code-card .code {
+  font-family: var(--font-title);
+  font-size: 2.2rem;
+  letter-spacing: 4px;
+  margin: 10px 0;
+}
+.room-link-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.room-link-row input {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius) / 2);
+  border: 2px solid #E7DFD3;
+  font-size: .85rem;
+}
+
+/* 방 목록 */
+.room-card {
+  margin-bottom: 10px;
+}
+.room-card .room-meta { font-size: .85rem; color: var(--cat); margin-top: 4px; }
+
+/* 힌트/판정 화면 */
+.play-hint-box {
+  text-align: center;
+  font-size: 1.05rem;
+  margin-bottom: 12px;
+}
+.ripple-wrong {
+  position: absolute;
+  width: 60px; height: 60px;
+  margin-left: -30px; margin-top: -30px;
+  border: 3px solid var(--warn);
+  border-radius: 50%;
+  animation: ripple-anim .6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ripple-anim {
+  from { transform: scale(.4); opacity: 1; }
+  to { transform: scale(2); opacity: 0; }
+}
+.glow-hint-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,246,233,.55), rgba(255,246,233,0) 70%);
+  pointer-events: none;
+}
+
+/* 방 기록판 (연습하기 랭킹과 동일한 행 스타일) */
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: calc(var(--radius) / 2);
+  margin-bottom: 6px;
+  background: #fff;
+}
+.rank-row.me { background: #FFF1DD; border: 2px solid var(--sunset); }
+.rank-row .rank-no { width: 28px; font-family: var(--font-title); color: var(--cat); }
+.rank-row .rank-nick { flex: 1; }
+.rank-row .rank-score { font-family: var(--font-title); color: var(--sunset); }

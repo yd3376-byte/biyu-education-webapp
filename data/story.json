@@ -1,0 +1,100 @@
+{
+  "opening": {
+    "lines": [
+      "어제는 학교가 시끄러웠다. 아이들이 운동장에 쏟아져 나와 소리를 질렀고, 종이 여러 번 울렸다.",
+      "오늘 아침, 나는 늘 그렇듯 후문 화단에서 눈을 떴다.",
+      "아무도 없다.",
+      "어제 그 많던 것들이 전부 사라졌다.",
+      "나는 그 아이를 찾으러 간다."
+    ],
+    "cicadaText": "맴——————",
+    "cicadaStopBeforeLine": 2
+  },
+
+  "places": ["cafeteria", "ground", "gym", "library", "classroom"],
+
+  "rounds": [
+    {
+      "id": 1,
+      "place": "cafeteria",
+      "question": "매일 같은 시각에 냄새로 종을 치던 방",
+      "trace": {
+        "title": "숨겨둔 사료 봉지",
+        "text": "배식대 뒤에 숨겨둔 사료 봉지. 아이 글씨로 뭔가 적혀 있다.\n\"다음은... 네모난 초원에 있어.\""
+      },
+      "requiresExpression": false
+    },
+    {
+      "id": 2,
+      "place": "ground",
+      "question": "네모난 초원. 아이들이 달리면 먼지가 파도처럼 일어나던 곳",
+      "trace": {
+        "title": "모래 위의 그림",
+        "text": "모래에 막대기로 그린 그림 — 고양이, 아이, 그리고 집."
+      },
+      "requiresExpression": false
+    },
+    {
+      "id": 3,
+      "place": "gym",
+      "question": "소리가 두 번 들리는 커다란 동굴",
+      "trace": {
+        "title": "분실물함 속 이름표",
+        "text": "분실물함에 걸린 이름표. 어제 방학식 때 받은 상장도 함께 있다."
+      },
+      "requiresExpression": false
+    },
+    {
+      "id": 4,
+      "place": "library",
+      "question": "소리를 내면 안 되는 종이 숲",
+      "trace": {
+        "title": "『고양이 기르는 법』",
+        "text": "아이가 빌려간 책 — 『고양이 기르는 법』. 사이에 끼운 메모: \"엄마 설득하는 방법 1. 2. 3.\""
+      },
+      "requiresExpression": true,
+      "expressionTarget": "이 책",
+      "expressionPrompt": "이 물건을, 이제 네가 내 말로 설명해봐.",
+      "exampleSentence": "『고양이 기르는 법』은 내가 매일 몰래 넘겨보는 비밀 지도 같다."
+    },
+    {
+      "id": 5,
+      "place": "classroom",
+      "question": "아이들을 하루 종일 담아뒀다가 종이 울리면 쏟아내던 상자",
+      "trace": {
+        "title": "그림일기",
+        "text": "아이 자리 서랍의 그림일기. 마지막 장에 고양이 그림과 한 줄이 적혀 있다."
+      },
+      "requiresExpression": true,
+      "expressionTarget": "이 그림일기",
+      "expressionPrompt": "이 물건을, 이제 네가 내 말로 설명해봐.",
+      "exampleSentence": "이 그림일기는 하루하루를 눌러 담은 작은 상자 같다."
+    }
+  ],
+
+  "wrongReactions": {
+    "cafeteria": "여긴 아니다. 여긴 냄새가 나지 않는다. 어제 이 시간엔 벽까지 밥 냄새가 배어 있었는데.",
+    "ground": "여긴 아니다. 밤새 바람이 발자국을 전부 지웠다.",
+    "gym": "여긴 아니다. 내 발소리만 두 번 들린다. 두 번째는 내가 아니었으면 했다.",
+    "library": "여긴 아니다. 여기선 원래 아무도 소리를 내지 않아서, 있는지 없는지도 알 수 없다.",
+    "classroom": "여긴 아니다. 의자가 전부 책상 위에 올라가 있다. 여긴 아무도 돌아오지 않을 자세다."
+  },
+
+  "ending": {
+    "lines": [
+      "아무 데도 없으면, 늘 있던 자리에서 기다리는 수밖에 없다.",
+      "나는 매일 그 아이에게 같은 말로 불렸다. \"내일 또 올게.\"",
+      "나는 그게 내 이름인 줄 알았다.",
+      "그래서 나는 매일, 내일이 되기를 기다렸다."
+    ],
+    "arrivalLine": "\"엄마가 허락해주셨어. 너무 보고 싶었어.\" — 아이가 이동장을 들고 뛰어온다."
+  },
+
+  "naming": {
+    "prompt": "이제 진짜 이름을 지어줄게. 그런데 너 혼자 정하면 심심하니까 — 너는 뭘 닮았어?",
+    "templateBefore": "너는 ",
+    "templateMiddle": " 같아서, 나는 너를 ",
+    "templateAfter": "(이)라고 부를래.",
+    "example": "예: 너는 해가 지기 직전의 구름 같아서, 나는 너를 노을이라고 부를래."
+  }
+}

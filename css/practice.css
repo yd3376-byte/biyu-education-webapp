@@ -1,0 +1,124 @@
+.practice-title { text-align: center; margin: 12px 0 4px; }
+.practice-sub { text-align: center; color: var(--cat); margin-bottom: 20px; }
+
+.practice-rules { margin: 16px 0; }
+.practice-rules li { margin-bottom: 6px; }
+
+.q-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .9rem;
+  color: var(--cat);
+  margin-bottom: 10px;
+}
+
+.q-timer-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #EFE4D3;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.q-timer-fill {
+  height: 100%;
+  background: var(--sunset);
+  transition: width 1s linear, background-color .3s ease;
+}
+.q-timer-fill.low { background: var(--warn); }
+
+.q-sentence {
+  font-size: 1.15rem;
+  line-height: 1.9;
+  margin-bottom: 18px;
+}
+.q-sentence u { text-decoration-color: var(--sunset); text-decoration-thickness: 3px; }
+
+.q-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.q-choices .btn {
+  width: 100%;
+  background: #fff;
+  border: 2px solid #E7DFD3;
+  color: var(--ink);
+  box-shadow: none;
+  justify-content: flex-start;
+  text-align: left;
+  padding-left: 18px;
+}
+.q-choices .btn.selected { border-color: var(--sunset); background: #FFF1DD; }
+.q-choices .btn.correct { border-color: var(--leaf); background: #E8F4EC; }
+.q-choices .btn.wrong { border-color: var(--warn); background: #FBEAE7; }
+.q-choices .btn:disabled { opacity: 1; cursor: default; }
+
+.q-feedback { min-height: 1.4em; margin: 10px 0; font-size: .95rem; }
+.q-feedback.success { color: var(--leaf); }
+.q-feedback.error { color: var(--warn); }
+
+.q-make textarea {
+  width: 100%;
+  min-height: 90px;
+  border: 2px solid #E7DFD3;
+  border-radius: calc(var(--radius) / 2);
+  padding: 12px;
+  resize: vertical;
+}
+
+.combo-badge {
+  display: inline-block;
+  background: var(--leaf);
+  color: #fff;
+  font-family: var(--font-title);
+  font-size: .8rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+
+/* 결과 화면 */
+.result-score {
+  text-align: center;
+  margin: 12px 0 20px;
+}
+.result-score .big { font-family: var(--font-title); font-size: 2.4rem; color: var(--sunset); }
+
+.type-bar-row { margin-bottom: 10px; }
+.type-bar-row .label { display: flex; justify-content: space-between; font-size: .88rem; margin-bottom: 4px; }
+.type-bar-track { height: 10px; background: #EFE4D3; border-radius: 999px; overflow: hidden; }
+.type-bar-fill { height: 100%; background: var(--leaf); }
+
+.review-item { margin-bottom: 12px; }
+.review-item .q-sentence { font-size: 1rem; margin-bottom: 6px; }
+.review-item .explain { font-size: .88rem; color: var(--cat); }
+
+.make-line { font-style: italic; margin-bottom: 6px; }
+
+/* 랭킹 화면 */
+.rank-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.rank-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 2px solid #E7DFD3;
+  color: var(--cat);
+}
+.rank-tabs button.active { border-color: var(--sunset); color: var(--ink); background: #FFF1DD; }
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: calc(var(--radius) / 2);
+  margin-bottom: 6px;
+  background: #fff;
+}
+.rank-row.me { background: #FFF1DD; border: 2px solid var(--sunset); }
+.rank-row .rank-no { width: 28px; font-family: var(--font-title); color: var(--cat); }
+.rank-row .rank-nick { flex: 1; }
+.rank-row .rank-score { font-family: var(--font-title); color: var(--sunset); }

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>우리 반이 지어준 이름들</title>
+<link rel="stylesheet" href="css/base.css" />
+<style>
+  .names-title { text-align: center; margin: 12px 0 4px; }
+  .names-sub { text-align: center; color: var(--cat); margin-bottom: 20px; }
+  .names-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (min-width: 600px) {
+    .names-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  .name-card {
+    background: linear-gradient(160deg, var(--sunset), #E98C6B);
+    color: var(--ink);
+    text-align: center;
+    padding: 16px 10px;
+  }
+  .name-card .cat-name { font-family: var(--font-title); font-size: 1.15rem; margin-bottom: 4px; }
+  .name-card .cat-vehicle { font-size: .8rem; opacity: .85; }
+  .name-card .cat-by { font-size: .72rem; opacity: .7; margin-top: 6px; }
+  .names-empty { text-align: center; color: var(--cat); margin-top: 40px; }
+  .names-back { display: block; text-align: center; margin-top: 24px; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="nick-header" id="nick-header"></div>
+
+    <h1 class="title names-title">🐈 우리 반이 지어준 이름들</h1>
+    <p class="names-sub">같은 학교 코드 친구들이 지어준 이름이야</p>
+
+    <div id="names-root"></div>
+
+    <a class="btn btn-ghost names-back" href="index.html">메인으로</a>
+  </div>
+
+  <script type="module">
+    import { ensureIdentity, mountNickHeader, showToast, escapeHtml } from './js/common.js';
+    import { getCatNames } from './js/db.js';
+
+    (async () => {
+      const identity = await ensureIdentity();
+      mountNickHeader(document.getElementById('nick-header'));
+
+      const root = document.getElementById('names-root');
+      const { data, error } = await getCatNames(identity.schoolCode);
+
+      if (error) {
+        showToast('이름 목록을 불러오지 못했어.', 'error');
+        root.innerHTML = '<p class="names-empty">목록을 불러올 수 없어. 잠시 후 다시 시도해줘.</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        root.innerHTML = '<p class="names-empty">아직 지어진 이름이 없어. 첫 번째 주인공이 되어볼까?</p>';
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'names-grid';
+      data.forEach((row) => {
+        const card = document.createElement('div');
+        card.className = 'card name-card';
+        card.innerHTML = `
+          <div class="cat-name">${escapeHtml(row.name)}</div>
+          <div class="cat-vehicle">${escapeHtml(row.vehicle)} 같아서</div>
+          <div class="cat-by">${escapeHtml(row.nickname)}</div>
+        `;
+        grid.appendChild(card);
+      });
+      root.appendChild(grid);
+    })();
+  </script>
+</body>
+</html>
