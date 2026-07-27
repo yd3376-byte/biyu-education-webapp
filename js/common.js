@@ -234,7 +234,8 @@ export function escapeHtml(s) {
 }
 
 export async function loadJson(path) {
-  const res = await fetch(path);
+  // 교사가 data/*.json을 자주 수정하므로 브라우저 캐시를 거치지 않고 항상 최신본을 가져온다.
+  const res = await fetch(path, { cache: 'no-store' });
   if (!res.ok) throw new Error(`failed to load ${path}`);
   return res.json();
 }
