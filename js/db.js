@@ -151,3 +151,53 @@ export function getRoomLeaderboard(room_id, limit = 10) {
       .limit(limit)
   );
 }
+
+/* ---------------- 비유 표현 연습하기 (practice 2.0) ---------------- */
+
+export async function savePracticeSession({ nickname, school_code, mode, total_score, max_score, best_answer, answers }) {
+  const { data: session, error: sessionError } = await wrap(
+    supabase.from('practice_sessions').insert({
+      nickname, school_code, mode, total_score, max_score, best_answer
+    }).select().single()
+  );
+  if (sessionError) return { data: null, error: sessionError };
+
+  if (Array.isArray(answers) && answers.length) {
+    const answersPayload = answers.map(a => ({
+      session_id: session.id,
+      question_id: a.question_id,
+      answer: a.answer,
+      stars: a.stars,
+      score: a.score
+    }));
+    const { error: answersError } = await wrap(supabase.from('practice_answers').insert(answersPayload));
+    if (answersError) return { data: session, error: answersError };
+  }
+
+  return { data: session, error: null };
+}
+
+export async function getPracticeRankings({ school_code = null, limit = 20 } = {}) {
+  let query = supabase
+    .from('practice_sessions')
+    .select('*')
+    .eq('mode', 20)
+    .order('total_score', { ascending: false })
+    .limit(500);
+
+  if (school_code) query = query.eq('school_code', school_code);
+
+  const { data, error } = await wrap(query);
+  if (error) return { data: null, error };
+
+  const best = new Map();
+  for (const row of data) {
+    const key = row.nickname;
+    if (!best.has(key) || best.get(key).total_score < row.total_score) best.set(key, row);
+  }
+  const ranked = [...best.values()]
+    .sort((a, b) => b.total_score - a.total_score)
+    .slice(0, limit);
+
+  return { data: ranked, error: null };
+}
