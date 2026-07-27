@@ -22,6 +22,7 @@ const root = document.getElementById('practice-root');
 let questions = [];
 let progress = null;
 let savedProgress = null;
+let viewingRankingStandalone = false; // 문제를 시작하지 않고 랭킹만 보러 온 경우
 
 async function init() {
   await ensureIdentity();
@@ -74,6 +75,7 @@ function cumulativeScore() {
 
 function render() {
   root.innerHTML = '';
+  if (viewingRankingStandalone) return renderRanking();
   if (!progress) return renderStart();
   switch (progress.phase) {
     case 'question': return renderQuestion();
@@ -125,6 +127,9 @@ function renderStart() {
     <div class="teacher-toggle">
       <label><input type="checkbox" id="ai-toggle" ${isAiScoringEnabled() ? 'checked' : ''}/> AI 정밀 채점 사용 (교사용 · 설정되어 있을 때만 동작)</label>
     </div>
+    <div class="row-btns">
+      <button class="btn btn-ghost" id="view-ranking-start-btn">🏆 랭킹 보기</button>
+    </div>
   `;
   root.appendChild(wrap);
 
@@ -142,6 +147,11 @@ function renderStart() {
 
   wrap.querySelectorAll('#mode-btns button').forEach((btn) => {
     btn.addEventListener('click', () => startQuiz(Number(btn.dataset.mode)));
+  });
+
+  wrap.querySelector('#view-ranking-start-btn').addEventListener('click', () => {
+    viewingRankingStandalone = true;
+    render();
   });
 }
 
@@ -510,6 +520,7 @@ async function saveAsImage(wrap) {
 function renderRanking() {
   const wrap = document.createElement('div');
   wrap.className = 'practice-ranking card';
+  const backLabel = viewingRankingStandalone ? '← 처음으로' : '← 모음집으로';
   wrap.innerHTML = `
     <h2 class="title">🏆 랭킹</h2>
     <div class="row-btns" id="rank-tabs">
@@ -518,15 +529,19 @@ function renderRanking() {
     </div>
     <div id="rank-list">불러오는 중...</div>
     <div class="row-btns">
-      <button class="btn btn-ghost" id="back-portfolio-btn">← 모음집으로</button>
+      <button class="btn btn-ghost" id="back-portfolio-btn">${backLabel}</button>
       <a class="btn btn-ghost" href="index.html">🏠 메인으로</a>
     </div>
   `;
   root.appendChild(wrap);
 
   wrap.querySelector('#back-portfolio-btn').addEventListener('click', () => {
-    progress.phase = 'portfolio';
-    saveProgress();
+    if (viewingRankingStandalone) {
+      viewingRankingStandalone = false;
+    } else {
+      progress.phase = 'portfolio';
+      saveProgress();
+    }
     render();
   });
 
