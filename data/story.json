@@ -7,103 +7,140 @@
       "그래서 나는 내 이름이 내일인 것 같다."
     ]
   },
+
   "opening": {
     "image": "assets/img/opening-schoolyard.png",
     "lines": [
       "어제는 학교가 시끄러웠다. 아이들이 운동장에 쏟아져 나와 소리를 질렀고, 종이 여러 번 울렸다.",
       "오늘 아침, 나는 늘 그렇듯 후문 화단에서 눈을 떴다.",
       "아무도 없다.",
-      "어제 그 많던 것들이 전부 사라졌다.",
-      "나는 그 아이를 찾으러 간다."
+      "어제 그 많던 것들이 전부 사라졌다."
     ],
     "cicadaText": "맴——————",
-    "cicadaStopBeforeLine": 2
+    "cicadaStopBeforeLine": 2,
+    "finalImage": "assets/img/empty-yard.png",
+    "finalLines": [
+      "나는 오늘은 오지 않는 그 아이를 찾으러 간다.",
+      "그 아이의 흔적을 따라 가야겠다."
+    ]
   },
 
-  "places": ["cafeteria", "ground", "gym", "library", "classroom"],
+  "map": {
+    "image": "assets/img/map.png",
+    "hotspots": [
+      { "id": "library",   "name": "도서관",  "x": 0.14, "y": 0.28, "w": 0.20, "h": 0.24 },
+      { "id": "classroom", "name": "교실",    "x": 0.51, "y": 0.17, "w": 0.34, "h": 0.22 },
+      { "id": "cafeteria", "name": "급식실",  "x": 0.87, "y": 0.28, "w": 0.20, "h": 0.24 },
+      { "id": "gym",       "name": "체육관",  "x": 0.85, "y": 0.68, "w": 0.24, "h": 0.30 },
+      { "id": "ground",    "name": "운동장",  "x": 0.47, "y": 0.66, "w": 0.42, "h": 0.30 },
+      { "id": "gate",      "name": "정문",    "x": 0.45, "y": 0.91, "w": 0.18, "h": 0.14 }
+    ]
+  },
 
-  "rounds": [
+  "wrongMessage": "\"다시 생각해보자.\"\n여긴 아닌 것 같다. 아이의 흔적이 더 흐릿해지는 것 같다.",
+
+  "searchRounds": [
     {
       "id": 1,
-      "place": "cafeteria",
-      "question": "매일 같은 시각에 냄새로 종을 치던 방",
-      "trace": {
-        "title": "숨겨둔 사료 봉지",
-        "text": "배식대 뒤에 숨겨둔 사료 봉지. 아이 글씨로 뭔가 적혀 있다.\n\"다음은... 네모난 초원에 있어.\""
-      },
-      "requiresExpression": false
+      "intro": ["\"매일 같은 시각에 냄새로 종을 치던 방\"", "이 방은 어느 곳일까요?"],
+      "correctPlace": "cafeteria",
+      "traceImage": "assets/img/trace-cafeteria.png",
+      "traceLines": [
+        "배식대 위에 있는 사료 봉지. 아이 글씨로 뭔가 적혀있다.",
+        "\"고양이를 챙겨주세요.\"",
+        "뭔지 모르겠다.",
+        "일단 여기에 그 아이는 없다. 다음 흔적을 따라가야겠다."
+      ]
     },
     {
       "id": 2,
-      "place": "ground",
-      "question": "네모난 초원. 아이들이 달리면 먼지가 파도처럼 일어나던 곳",
-      "trace": {
-        "title": "모래 위의 그림",
-        "text": "모래에 막대기로 그린 그림 — 고양이, 아이, 그리고 집."
-      },
-      "requiresExpression": false
+      "intro": ["다음은 \"네모난 초원\"으로 향해야겠어.", "네모난 초원. 아이들이 달리면 먼지가 파도처럼 일어나던 곳.", "어디일까요?"],
+      "correctPlace": "ground",
+      "traceImage": "assets/img/trace-ground.png",
+      "traceLines": [
+        "아이가 남겨놓은 흔적이다.",
+        "저 그림에 나온 동물은 나일까?",
+        "일단 여기도 아이는 없다.",
+        "다음 흔적을 따라가자."
+      ]
     },
     {
       "id": 3,
-      "place": "gym",
-      "question": "소리가 두 번 들리는 커다란 동굴",
-      "trace": {
-        "title": "분실물함 속 이름표",
-        "text": "분실물함에 걸린 이름표. 어제 방학식 때 받은 상장도 함께 있다."
-      },
-      "requiresExpression": false
+      "intro": ["\"소리가 두 번 들리는 커다란 동굴\"", "어디일까요?"],
+      "correctPlace": "gym",
+      "traceImage": "assets/img/trace-gym.png",
+      "traceLines": [
+        "햇살이 들어온다.",
+        "바닥 한가운데 물그릇이 놓여있다.",
+        "그 옆에 이름표가 떨어져있다.",
+        "그 아이의 이름인 걸까?",
+        "천천히 다가가 물그릇 냄새를 맡았다.",
+        "그 아이의 냄새다.",
+        "더더욱 보고 싶어졌다.",
+        "다음은 아이가 자주 가던 곳으로 가야겠어."
+      ]
     },
     {
       "id": 4,
-      "place": "library",
-      "question": "소리를 내면 안 되는 종이 숲",
-      "trace": {
-        "title": "『고양이 기르는 법』",
-        "text": "아이가 빌려간 책 — 『고양이 기르는 법』. 사이에 끼운 메모: \"엄마 설득하는 방법 1. 2. 3.\""
-      },
-      "requiresExpression": true,
-      "expressionTarget": "이 책",
-      "expressionPrompt": "이 물건을, 이제 네가 내 말로 설명해봐.",
-      "exampleSentence": "『고양이 기르는 법』은 내가 매일 몰래 넘겨보는 비밀 지도 같다."
-    },
-    {
-      "id": 5,
-      "place": "classroom",
-      "question": "아이들을 하루 종일 담아뒀다가 종이 울리면 쏟아내던 상자",
-      "trace": {
-        "title": "그림일기",
-        "text": "아이 자리 서랍의 그림일기. 마지막 장에 고양이 그림과 한 줄이 적혀 있다."
-      },
-      "requiresExpression": true,
-      "expressionTarget": "이 그림일기",
-      "expressionPrompt": "이 물건을, 이제 네가 내 말로 설명해봐.",
-      "exampleSentence": "이 그림일기는 하루하루를 눌러 담은 작은 상자 같다."
+      "intro": ["\"소리를 내면 안 되는 종이 숲\"", "어디일까요?"],
+      "correctPlace": "library",
+      "traceImage": "assets/img/trace-library.png",
+      "traceLines": [
+        "그 아이가 자주 보던 책이다.",
+        "표지에는 내가 그려져있는 것 같다.",
+        "옆에 작은 쪽지가 있다.",
+        "무슨 뜻인지는 모르겠다.",
+        "하지만 그 종이에서도 그 아이의 냄새가 난다."
+      ]
     }
   ],
 
-  "wrongReactions": {
-    "cafeteria": "여긴 아니다. 여긴 냄새가 나지 않는다. 어제 이 시간엔 벽까지 밥 냄새가 배어 있었는데.",
-    "ground": "여긴 아니다. 밤새 바람이 발자국을 전부 지웠다.",
-    "gym": "여긴 아니다. 내 발소리만 두 번 들린다. 두 번째는 내가 아니었으면 했다.",
-    "library": "여긴 아니다. 여기선 원래 아무도 소리를 내지 않아서, 있는지 없는지도 알 수 없다.",
-    "classroom": "여긴 아니다. 의자가 전부 책상 위에 올라가 있다. 여긴 아무도 돌아오지 않을 자세다."
+  "classroomScene": {
+    "transitionLine": "다음은 교실로 가야겠다.",
+    "prompt": "교실을, 이제 고양이의 눈으로 본 것처럼 비유하는 표현으로 나타내봐.",
+    "target": "교실",
+    "exampleSentence": "교실은 아이들의 웃음소리로 가득 찬 커다란 상자 같다.",
+    "afterTransitionTemplate": "다음은 \"{sentence}\"으로 가야겠다.",
+    "afterImage": "assets/img/classroom-bag.png",
+    "afterLines": ["아이의 냄새가 가장 많은 곳이 어디지?"],
+    "bagHotspot": { "x": 0.55, "y": 0.62, "w": 0.22, "h": 0.34 },
+    "bagImage": "assets/img/diary.png",
+    "bagLines": [
+      "여기도 없다.",
+      "이제 어디로 가지?",
+      "나가봐야겠다."
+    ]
   },
 
-  "ending": {
-    "lines": [
-      "아무 데도 없으면, 늘 있던 자리에서 기다리는 수밖에 없다.",
-      "나는 매일 그 아이에게 같은 말로 불렸다. \"내일 또 올게.\"",
-      "나는 그게 내 이름인 줄 알았다.",
-      "그래서 나는 매일, 내일이 되기를 기다렸다."
+  "gateScene": {
+    "correctPlace": "gate",
+    "arriveImage": "assets/img/gate-wait.png",
+    "arriveLines": [
+      "발걸음 소리가 들린다.",
+      "아이의 냄새가 강해진다.",
+      "아이가 드디어 왔나?"
     ],
-    "arrivalLine": "\"엄마가 허락해주셨어. 너무 보고 싶었어.\" — 아이가 이동장을 들고 뛰어온다."
+    "runImage": "assets/img/gate-run.png",
+    "runLines": [
+      "\"고양아! 드디어 부모님께서 허락해주셨어!! 잘 있었어? 이제 우리집으로 가서 같이 살자!\""
+    ],
+    "hugImage": "assets/img/gate-hug.png",
+    "hugLines": [
+      "뭐라는 거지? 아이가 날 껴안았다.",
+      "뭐라는건진 모르겠지만 뭐든 좋았다.",
+      "아이와 함께라면 늘 행복할 것 같다.",
+      "\"이제 너에게 이름을 지어줄게!!\""
+    ],
+    "namingImage": "assets/img/naming.png",
+    "namingPrompt": "고양이의 이름을 지어주세요.",
+    "afterNamingTemplate": "\"{name}! 이제 우리 집으로 가자!\""
   },
 
-  "naming": {
-    "prompt": "이제 진짜 이름을 지어줄게. 그런데 너 혼자 정하면 심심하니까 — 너는 뭘 닮았어?",
-    "templateBefore": "너는 ",
-    "templateMiddle": " 같아서, 나는 너를 ",
-    "templateAfter": "(이)라고 부를래.",
-    "example": "예: 너는 해가 지기 직전의 구름 같아서, 나는 너를 노을이라고 부를래."
-  }
+  "coda": [
+    { "image": "assets/img/home-walk.png", "lines": ["아이는 나를 안고 집으로 걸어갔다."] },
+    { "image": "assets/img/home-door.png", "lines": ["우리 집에 도착했다."] },
+    { "image": "assets/img/home-bed.png", "lines": ["여긴 어디지?", "너무 따뜻하다.", "나를 위한 방석과 물, 밥 다 있네.", "여긴 천국인가?"] },
+    { "image": "assets/img/home-play.png", "lines": ["아이와 함께하는 시간이 늘었다.", "이제 항상 곁에 있을 수 있다.", "아이의 흔적이 가득한 이 방이 너무나 좋다."] },
+    { "image": "assets/img/home-sleep.png", "lines": ["우리는 이제 마치 정말 가족처럼", "따스한 햇살에 같이 눈을 뜨며", "서로의 온기를 느끼며 같이 잠에 든다.", "이제 나는 내일이 아니다.", "이제 나는 오늘을 살며 진짜 나의 이름을 가지고 시현이의 곁에 있다."] }
+  ]
 }

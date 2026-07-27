@@ -1,12 +1,11 @@
 import { checkMetaphor } from './metaphor.js';
-import { ensureIdentity, mountNickHeader, typeText, showToast, loadPlaceBg, loadJson, escapeHtml } from './common.js';
+import { ensureIdentity, mountNickHeader, typeText, showToast, loadJson, escapeHtml } from './common.js';
 import { saveCatName } from './db.js';
 
 const PROGRESS_KEY = 'ba_story_progress';
 const CLOCK_TIMES = ['오전 8:20', '오전 8:40', '오전 9:05', '오전 9:30', '오전 10:00', '오전 10:20'];
 
 let storyData = null;
-let places = null;
 let identity = null;
 
 const progress = loadProgress();
@@ -18,7 +17,15 @@ function loadProgress() {
   } catch {
     // ignore malformed progress and start over
   }
-  return { phase: 'intro', roundIndex: 0, notebook: [], exprFailCount: 0, catName: null };
+  return {
+    phase: 'intro',
+    searchIndex: 0,
+    codaIndex: 0,
+    notebook: [],
+    exprFailCount: 0,
+    classroomSentence: null,
+    catName: null
+  };
 }
 
 function saveProgress() {
@@ -56,7 +63,7 @@ bgmToggleBtn.addEventListener('click', () => {
   updateBgmToggleUI();
   if (bgmMuted) {
     bgmDark.pause();
-  } else if (progress.phase !== 'naming' && progress.phase !== 'done') {
+  } else if (progress.phase !== 'coda' && progress.phase !== 'done') {
     tryPlayBgm();
   }
 });
@@ -69,7 +76,6 @@ function tryPlayBgm() {
   if (bgmMuted) return;
   bgmDark.volume = BGM_VOLUME;
   bgmDark.play().catch(() => {
-    // 브라우저 자동재생 정책으로 막힌 경우, 다음 클릭에서 재시도
     document.addEventListener('click', () => tryPlayBgm(), { once: true });
   });
 }
@@ -101,10 +107,7 @@ async function init() {
   identity = await ensureIdentity();
   mountNickHeader(document.getElementById('nick-header'));
 
-  [storyData, places] = await Promise.all([
-    loadJson('data/story.json'),
-    loadJson('data/places.json')
-  ]);
+  storyData = await loadJson('data/story.json');
 
   updateClock();
   updateNotebookBadge();
@@ -112,15 +115,8 @@ async function init() {
 }
 init();
 
-function placeById(id) {
-  return places.find((p) => p.id === id);
-}
-function placeName(id) {
-  return placeById(id)?.name || id;
-}
-
 function updateClock() {
-  const idx = Math.min(progress.roundIndex, CLOCK_TIMES.length - 1);
+  const idx = Math.min(progress.searchIndex, CLOCK_TIMES.length - 1);
   clockEl.textContent = CLOCK_TIMES[idx];
 }
 function updateNotebookBadge() {
@@ -138,8 +134,6 @@ function openNotebook() {
     card.innerHTML = `
       <div class="trace-title">${escapeHtml(entry.title)}</div>
       <div class="trace-text">${escapeHtml(entry.text)}</div>
-      <div style="margin-top:6px;font-size:.85rem;color:var(--cat);">${escapeHtml(placeName(entry.place))}에서 발견</div>
-      ${entry.myLine ? `<div class="my-line">내가 만든 말: "${escapeHtml(entry.myLine)}"</div>` : ''}
     `;
     notebookList.appendChild(card);
   });
@@ -159,28 +153,73 @@ function waitForClick(el) {
   });
 }
 
+function makeStage() {
+  root.innerHTML = '';
+  const wrap = document.createElement('div');
+  const stage = document.createElement('div');
+  stage.className = 'story-stage';
+  const dialogue = document.createElement('div');
+  dialogue.className = 'story-dialogue';
+  stage.appendChild(dialogue);
+  wrap.appendChild(stage);
+  root.appendChild(wrap);
+  return { wrap, dialogue };
+}
+
+async function playLines(dialogue, lines) {
+  for (const line of lines) {
+    await typeText(dialogue, line);
+    await waitForClick(dialogue);
+  }
+}
+
+/**
+ * 이미지 + 대사 줄을 순서대로 보여주는 공통 장면 렌더러.
+ * 검은/어두운 상태를 유지한 채 story-scene-bg에 이미지를 표시한다.
+ */
+function renderTraceScene(image, lines, onDone) {
+  root.innerHTML = '';
+  const wrap = document.createElement('div');
+
+  const sceneImg = document.createElement('div');
+  sceneImg.className = 'story-scene-bg place-bg';
+  sceneImg.style.backgroundImage = `url("${image}")`;
+  wrap.appendChild(sceneImg);
+
+  const stage = document.createElement('div');
+  stage.className = 'story-stage';
+  const dialogue = document.createElement('div');
+  dialogue.className = 'story-dialogue';
+  stage.appendChild(dialogue);
+  wrap.appendChild(stage);
+
+  root.appendChild(wrap);
+
+  playLines(dialogue, lines).then(() => {
+    if (onDone) onDone();
+  });
+}
+
 /* ---------------- 렌더 디스패처 ---------------- */
 
 function render() {
   root.innerHTML = '';
 
-  if (progress.phase === 'naming' || progress.phase === 'done') {
-    // 새로고침 등으로 이 단계부터 다시 열린 경우, 어두운 배경음악 없이 밝은 화면으로 표시
+  if (progress.phase === 'coda' || progress.phase === 'done') {
     bgmDark.pause();
     document.body.classList.add('story-bright');
     sunRevealEl.classList.add('show');
-  } else if (progress.phase !== 'intro' && progress.phase !== 'opening') {
+  } else {
     tryPlayBgm();
   }
 
   switch (progress.phase) {
     case 'intro': renderIntro(); break;
     case 'opening': renderOpening(); break;
-    case 'round': renderRound(); break;
-    case 'trace': renderTrace(); break;
-    case 'expression': renderExpression(); break;
-    case 'ending': renderEnding(); break;
-    case 'naming': renderNaming(); break;
+    case 'search': renderSearch(); break;
+    case 'classroom': renderClassroom(); break;
+    case 'gate': renderGate(); break;
+    case 'coda': renderCoda(); break;
     case 'done': renderDone(); break;
     default: renderIntro();
   }
@@ -208,10 +247,7 @@ function renderIntro() {
 }
 
 async function playIntro(dialogue) {
-  for (const line of storyData.intro.lines) {
-    await typeText(dialogue, line);
-    await waitForClick(dialogue);
-  }
+  await playLines(dialogue, storyData.intro.lines);
   progress.phase = 'opening';
   saveProgress();
   render();
@@ -240,7 +276,8 @@ function renderOpening() {
 }
 
 async function playOpening(dialogue, sceneImg) {
-  const { lines, cicadaStopBeforeLine, image } = storyData.opening;
+  const { lines, cicadaStopBeforeLine, image, finalImage, finalLines } = storyData.opening;
+
   for (let i = 0; i < lines.length; i += 1) {
     if (i === 0) {
       sceneImg.hidden = false;
@@ -254,131 +291,125 @@ async function playOpening(dialogue, sceneImg) {
     await typeText(dialogue, lines[i]);
     await waitForClick(dialogue);
   }
-  progress.phase = 'round';
-  progress.roundIndex = 0;
+
+  sceneImg.hidden = false;
+  sceneImg.style.backgroundImage = `url("${finalImage}")`;
+  await playLines(dialogue, finalLines);
+
+  progress.phase = 'search';
+  progress.searchIndex = 0;
   saveProgress();
   updateClock();
   render();
 }
 
-/* ---------------- 라운드: 장소 선택 ---------------- */
+/* ---------------- 지도에서 장소 찾기 ---------------- */
 
-function renderRound() {
-  const round = storyData.rounds[progress.roundIndex];
+function renderMap(correctPlaceId, onCorrect) {
+  root.innerHTML = '';
   const wrap = document.createElement('div');
 
-  const stage = document.createElement('div');
-  stage.className = 'story-stage';
-  const dialogue = document.createElement('div');
-  dialogue.className = 'story-dialogue';
-  stage.appendChild(dialogue);
-  wrap.appendChild(stage);
+  const mapWrap = document.createElement('div');
+  mapWrap.className = 'map-wrap';
+  const img = document.createElement('img');
+  img.src = storyData.map.image;
+  img.className = 'map-image';
+  img.alt = '학교 지도';
+  mapWrap.appendChild(img);
 
-  const placesWrap = document.createElement('div');
-  placesWrap.className = 'story-places';
-  storyData.places.forEach((pid) => {
+  const feedback = document.createElement('div');
+
+  storyData.map.hotspots.forEach((h) => {
     const btn = document.createElement('button');
-    btn.className = 'btn';
-    btn.textContent = placeName(pid);
-    btn.addEventListener('click', () => onPlaceChosen(pid, round, dialogue));
-    placesWrap.appendChild(btn);
+    btn.className = 'map-hotspot';
+    btn.style.left = `${(h.x - h.w / 2) * 100}%`;
+    btn.style.top = `${(h.y - h.h / 2) * 100}%`;
+    btn.style.width = `${h.w * 100}%`;
+    btn.style.height = `${h.h * 100}%`;
+    btn.innerHTML = `<span>${escapeHtml(h.name)}</span>`;
+    btn.addEventListener('click', () => {
+      if (h.id === correctPlaceId) {
+        onCorrect();
+      } else {
+        feedback.textContent = storyData.wrongMessage;
+      }
+    });
+    mapWrap.appendChild(btn);
   });
-  wrap.appendChild(placesWrap);
+  wrap.appendChild(mapWrap);
+
+  feedback.className = 'map-feedback';
+  wrap.appendChild(feedback);
 
   root.appendChild(wrap);
-  typeText(dialogue, `"${round.question}"`);
 }
 
-function onPlaceChosen(pid, round, dialogue) {
-  if (pid === round.place) {
-    progress.phase = 'trace';
-    saveProgress();
-    render();
-    return;
-  }
-  const msg = storyData.wrongReactions[pid] || '여긴 아니다.';
-  typeText(dialogue, `"${msg}"`);
+function renderSearch() {
+  const round = storyData.searchRounds[progress.searchIndex];
+  const { dialogue } = makeStage();
+  playSearchIntro(dialogue, round);
 }
 
-/* ---------------- 흔적 발견 ---------------- */
+async function playSearchIntro(dialogue, round) {
+  await playLines(dialogue, round.intro);
+  renderMap(round.correctPlace, () => onSearchCorrect(round));
+}
 
-function renderTrace() {
-  const round = storyData.rounds[progress.roundIndex];
-  const wrap = document.createElement('div');
-
-  const bg = document.createElement('div');
-  bg.className = 'story-scene-bg';
-  loadPlaceBg(bg, placeById(round.place));
-  wrap.appendChild(bg);
-
-  const card = document.createElement('div');
-  card.className = 'trace-card';
-  card.innerHTML = `
-    <div class="trace-title">${escapeHtml(round.trace.title)}</div>
-    <div class="trace-text">${escapeHtml(round.trace.text)}</div>
-  `;
-  wrap.appendChild(card);
-
-  const btn = document.createElement('button');
-  btn.className = 'btn';
-  btn.style.width = '100%';
-  btn.textContent = round.requiresExpression ? '계속' : '다음';
-  btn.addEventListener('click', () => {
+function onSearchCorrect(round) {
+  renderTraceScene(round.traceImage, round.traceLines, () => {
     if (!progress.notebook.some((e) => e.roundId === round.id)) {
+      const place = storyData.map.hotspots.find((h) => h.id === round.correctPlace);
       progress.notebook.push({
         roundId: round.id,
-        place: round.place,
-        title: round.trace.title,
-        text: round.trace.text,
-        myLine: null
+        title: `${place ? place.name : round.correctPlace}에서 찾은 흔적`,
+        text: round.traceLines.join(' ')
       });
       updateNotebookBadge();
     }
-
-    if (round.requiresExpression) {
-      progress.phase = 'expression';
-      progress.exprFailCount = 0;
-      saveProgress();
-      render();
-    } else {
-      advanceRound();
-    }
+    advanceSearch();
   });
-  wrap.appendChild(btn);
-
-  root.appendChild(wrap);
 }
 
-function advanceRound() {
-  if (progress.roundIndex + 1 >= storyData.rounds.length) {
-    progress.phase = 'ending';
+function advanceSearch() {
+  if (progress.searchIndex + 1 >= storyData.searchRounds.length) {
+    progress.phase = 'classroom';
   } else {
-    progress.roundIndex += 1;
-    progress.phase = 'round';
+    progress.searchIndex += 1;
   }
   saveProgress();
   updateClock();
   render();
 }
 
-/* ---------------- 4·5라운드: 표현으로 설명하기 ---------------- */
+/* ---------------- 교실: 비유 표현 + 가방 찾기 ---------------- */
 
-function renderExpression() {
-  const round = storyData.rounds[progress.roundIndex];
+function renderClassroom() {
+  const { dialogue } = makeStage();
+  playClassroomTransition(dialogue);
+}
+
+async function playClassroomTransition(dialogue) {
+  await typeText(dialogue, storyData.classroomScene.transitionLine);
+  await waitForClick(dialogue);
+  renderClassroomExpr();
+}
+
+function renderClassroomExpr() {
+  const scene = storyData.classroomScene;
   const wrap = document.createElement('div');
 
   const stage = document.createElement('div');
   stage.className = 'story-stage';
   const dialogue = document.createElement('div');
   dialogue.className = 'story-dialogue';
+  dialogue.textContent = `"${scene.prompt}"`;
   stage.appendChild(dialogue);
   wrap.appendChild(stage);
-  typeText(dialogue, `"${round.expressionPrompt}"`);
 
   const box = document.createElement('div');
   box.className = 'expr-box card';
   box.innerHTML = `
-    <p>${escapeHtml(round.expressionTarget)}을(를) 비유로 표현해보자.</p>
+    <p>${escapeHtml(scene.target)}을(를) 비유로 표현해보자.</p>
     <textarea id="expr-input" maxlength="80" placeholder="예: ~같이, ~처럼, 또는 '○○는 △△다'"></textarea>
     <div class="expr-feedback" id="expr-feedback"></div>
     <button class="btn" id="expr-submit" style="width:100%">말해주기</button>
@@ -395,13 +426,10 @@ function renderExpression() {
     const result = checkMetaphor(input.value);
 
     if (result.ok) {
-      feedback.textContent = '좋아, 그 말로 기억할게.';
-      feedback.className = 'expr-feedback success';
-      const entry = progress.notebook.find((e) => e.roundId === round.id);
-      if (entry) entry.myLine = input.value.trim();
+      progress.classroomSentence = input.value.trim();
       progress.exprFailCount = 0;
       saveProgress();
-      setTimeout(() => advanceRound(), 700);
+      afterClassroomExpr(progress.classroomSentence);
       return;
     }
 
@@ -410,16 +438,41 @@ function renderExpression() {
     feedback.className = 'expr-feedback error';
     if (progress.exprFailCount >= 3) {
       exampleBox.hidden = false;
-      exampleBox.textContent = `예시: "${round.exampleSentence}"`;
+      exampleBox.textContent = `예시: "${scene.exampleSentence}"`;
     }
     saveProgress();
   });
 }
 
-/* ---------------- 결말 ---------------- */
+async function afterClassroomExpr(sentence) {
+  const scene = storyData.classroomScene;
+  const { dialogue } = makeStage();
+  const line = scene.afterTransitionTemplate.replace('{sentence}', sentence);
+  await typeText(dialogue, line);
+  await waitForClick(dialogue);
+  renderClassroomBagHotspot();
+}
 
-function renderEnding() {
+function renderClassroomBagHotspot() {
+  const scene = storyData.classroomScene;
+  root.innerHTML = '';
   const wrap = document.createElement('div');
+
+  const sceneImg = document.createElement('div');
+  sceneImg.className = 'story-scene-bg place-bg';
+  sceneImg.style.backgroundImage = `url("${scene.afterImage}")`;
+  wrap.appendChild(sceneImg);
+
+  const hotspot = document.createElement('button');
+  hotspot.className = 'map-hotspot bag-hotspot';
+  const h = scene.bagHotspot;
+  hotspot.style.left = `${(h.x - h.w / 2) * 100}%`;
+  hotspot.style.top = `${(h.y - h.h / 2) * 100}%`;
+  hotspot.style.width = `${h.w * 100}%`;
+  hotspot.style.height = `${h.h * 100}%`;
+  hotspot.innerHTML = '<span>🎒</span>';
+  sceneImg.appendChild(hotspot);
+
   const stage = document.createElement('div');
   stage.className = 'story-stage';
   const dialogue = document.createElement('div');
@@ -428,57 +481,62 @@ function renderEnding() {
   wrap.appendChild(stage);
   root.appendChild(wrap);
 
-  playEnding(dialogue);
+  typeText(dialogue, scene.afterLines[0]);
+
+  hotspot.addEventListener('click', () => {
+    renderTraceScene(scene.bagImage, scene.bagLines, () => {
+      progress.phase = 'gate';
+      saveProgress();
+      render();
+    });
+  }, { once: true });
 }
 
-async function playEnding(dialogue) {
-  for (const line of storyData.ending.lines) {
-    await typeText(dialogue, line);
-    await waitForClick(dialogue);
-  }
-  dialogue.textContent = '···';
-  fadeAudio(bgmDark, 0, 1500);
-  await new Promise((r) => setTimeout(r, 1200));
+/* ---------------- 정문: 아이와의 재회 + 이름 짓기 ---------------- */
 
-  document.body.classList.add('story-bright');
-  sunRevealEl.classList.add('show');
-
-  await typeText(dialogue, storyData.ending.arrivalLine);
-  await waitForClick(dialogue);
-
-  progress.phase = 'naming';
-  saveProgress();
-  render();
+function renderGate() {
+  renderMap('gate', onGateCorrect);
 }
 
-/* ---------------- 이름 짓기 ---------------- */
+function onGateCorrect() {
+  const scene = storyData.gateScene;
+  renderTraceScene(scene.arriveImage, scene.arriveLines, () => {
+    fadeAudio(bgmDark, 0, 1500);
+    document.body.classList.add('story-bright');
+    sunRevealEl.classList.add('show');
 
-function checkVehicle(text) {
-  const result = checkMetaphor(text);
-  if (result.ok || result.code === 'NO_FIGURE') {
-    return { ok: true, message: '' };
-  }
-  return result;
+    renderTraceScene(scene.runImage, scene.runLines, () => {
+      renderTraceScene(scene.hugImage, scene.hugLines, () => {
+        renderNamingStep();
+      });
+    });
+  });
 }
 
-function renderNaming() {
+function renderNamingStep() {
+  const scene = storyData.gateScene;
+  root.innerHTML = '';
   const wrap = document.createElement('div');
+
+  const sceneImg = document.createElement('div');
+  sceneImg.className = 'story-scene-bg place-bg';
+  sceneImg.style.backgroundImage = `url("${scene.namingImage}")`;
+  wrap.appendChild(sceneImg);
 
   const stage = document.createElement('div');
   stage.className = 'story-stage';
   const dialogue = document.createElement('div');
   dialogue.className = 'story-dialogue';
+  dialogue.textContent = `"${scene.namingPrompt}"`;
   stage.appendChild(dialogue);
   wrap.appendChild(stage);
-  typeText(dialogue, `"${storyData.naming.prompt}"`);
 
   const form = document.createElement('div');
   form.className = 'naming-form';
   form.innerHTML = `
-    <div class="naming-sentence">
-      ${escapeHtml(storyData.naming.templateBefore)}<input id="naming-vehicle" maxlength="60" placeholder="비유" />${escapeHtml(storyData.naming.templateMiddle)}<input id="naming-name" maxlength="8" placeholder="이름" />${escapeHtml(storyData.naming.templateAfter)}
+    <div class="field">
+      <input id="cat-name-input" maxlength="8" placeholder="이름 (1~8자)" />
     </div>
-    <p class="hint">${escapeHtml(storyData.naming.example)}</p>
     <div class="expr-feedback" id="naming-feedback"></div>
     <button class="btn" id="naming-submit" style="width:100%">이름 지어주기</button>
   `;
@@ -486,24 +544,19 @@ function renderNaming() {
   root.appendChild(wrap);
 
   form.querySelector('#naming-submit').addEventListener('click', async () => {
-    const vehicle = form.querySelector('#naming-vehicle').value.trim();
-    const name = form.querySelector('#naming-name').value.trim();
+    const name = form.querySelector('#cat-name-input').value.trim();
     const feedback = form.querySelector('#naming-feedback');
-    const submitBtn = form.querySelector('#naming-submit');
 
-    const vResult = checkVehicle(vehicle);
-    if (!vResult.ok) {
-      feedback.textContent = vResult.message;
-      feedback.className = 'expr-feedback error';
-      return;
-    }
     if (name.length < 1 || name.length > 8) {
       feedback.textContent = '이름은 1~8자로 지어줘.';
       feedback.className = 'expr-feedback error';
       return;
     }
 
+    const submitBtn = form.querySelector('#naming-submit');
     submitBtn.disabled = true;
+
+    const vehicle = (progress.classroomSentence || scene.namingPrompt).slice(0, 60);
     const { error } = await saveCatName({
       nickname: identity.nickname,
       school_code: identity.schoolCode,
@@ -518,10 +571,57 @@ function renderNaming() {
     }
 
     progress.catName = { vehicle, name };
-    progress.phase = 'done';
     saveProgress();
-    render();
+
+    const afterLine = scene.afterNamingTemplate.replace('{name}', name);
+    await afterNaming(afterLine);
   });
+}
+
+async function afterNaming(afterLine) {
+  const { dialogue } = makeStage();
+  await typeText(dialogue, afterLine);
+  await waitForClick(dialogue);
+
+  progress.phase = 'coda';
+  progress.codaIndex = 0;
+  saveProgress();
+  render();
+}
+
+/* ---------------- 코다: 새로운 일상 ---------------- */
+
+function renderCoda() {
+  const scene = storyData.coda[progress.codaIndex];
+  root.innerHTML = '';
+  const wrap = document.createElement('div');
+
+  const sceneImg = document.createElement('div');
+  sceneImg.className = 'story-scene-bg place-bg';
+  sceneImg.style.backgroundImage = `url("${scene.image}")`;
+  wrap.appendChild(sceneImg);
+
+  const stage = document.createElement('div');
+  stage.className = 'story-stage';
+  const dialogue = document.createElement('div');
+  dialogue.className = 'story-dialogue';
+  stage.appendChild(dialogue);
+  wrap.appendChild(stage);
+  root.appendChild(wrap);
+
+  playCoda(dialogue, scene.lines);
+}
+
+async function playCoda(dialogue, lines) {
+  await playLines(dialogue, lines);
+
+  if (progress.codaIndex + 1 >= storyData.coda.length) {
+    progress.phase = 'done';
+  } else {
+    progress.codaIndex += 1;
+  }
+  saveProgress();
+  render();
 }
 
 /* ---------------- 완료 화면 ---------------- */
@@ -531,10 +631,10 @@ function renderDone() {
   const { vehicle, name } = progress.catName || {};
   wrap.innerHTML = `
     <div class="nametag-card">
-      <div class="cat-vehicle">${escapeHtml(vehicle || '')} 같아서</div>
       <div class="cat-name">${escapeHtml(name || '')}</div>
-      <div class="cat-vehicle">라고 부르기로 했다.</div>
+      <div class="cat-vehicle">시현이가 지어준 이름이다.</div>
     </div>
+    ${vehicle ? `<p class="hint" style="text-align:center;margin-top:10px;">교실에서 내가 남긴 말: "${escapeHtml(vehicle)}"</p>` : ''}
     <p style="text-align:center;margin-top:16px;">저장 완료! 우리 반 친구들이 지어준 이름도 구경해볼까?</p>
     <a class="btn" style="display:block;text-align:center;margin-top:8px;" href="names.html">우리 반이 지어준 이름들 보기</a>
     <a class="btn btn-ghost" style="display:block;text-align:center;margin-top:8px;" href="index.html">메인으로</a>

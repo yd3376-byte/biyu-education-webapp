@@ -118,6 +118,51 @@ body.story-body.story-bright .story-notebook-btn {
   width: 100%;
   aspect-ratio: 16 / 9;
   margin-bottom: 16px;
+  position: relative;
+}
+
+/* 지도에서 장소 찾기 */
+.map-wrap {
+  position: relative;
+  width: 100%;
+  margin-bottom: 10px;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.map-image {
+  width: 100%;
+  display: block;
+}
+.map-hotspot {
+  position: absolute;
+  background: rgba(242, 166, 90, .32);
+  border: 2px solid rgba(255, 246, 233, .85);
+  border-radius: 14px;
+  color: #fff;
+  font-family: var(--font-title);
+  font-size: .85rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 4px;
+  text-align: center;
+}
+.map-hotspot:active { background: rgba(242, 166, 90, .55); }
+.map-feedback {
+  min-height: 1.4em;
+  text-align: center;
+  color: var(--cream);
+  margin-top: 6px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+.bag-hotspot {
+  background: rgba(255, 246, 233, .18);
+  border-style: dashed;
+  font-size: 1.8rem;
 }
 
 /* 장소 선택 버튼 */
