@@ -18,7 +18,7 @@ function loadProgress() {
   } catch {
     // ignore malformed progress and start over
   }
-  return { phase: 'opening', roundIndex: 0, notebook: [], exprFailCount: 0, catName: null };
+  return { phase: 'intro', roundIndex: 0, notebook: [], exprFailCount: 0, catName: null };
 }
 
 function saveProgress() {
@@ -161,11 +161,12 @@ function render() {
     bgmDark.pause();
     document.body.classList.add('story-bright');
     sunRevealEl.classList.add('show');
-  } else {
+  } else if (progress.phase !== 'intro' && progress.phase !== 'opening') {
     tryPlayBgm();
   }
 
   switch (progress.phase) {
+    case 'intro': renderIntro(); break;
     case 'opening': renderOpening(); break;
     case 'round': renderRound(); break;
     case 'trace': renderTrace(); break;
@@ -173,27 +174,73 @@ function render() {
     case 'ending': renderEnding(); break;
     case 'naming': renderNaming(); break;
     case 'done': renderDone(); break;
-    default: renderOpening();
+    default: renderIntro();
   }
 }
 
-/* ---------------- 여는 장면 ---------------- */
+/* ---------------- 인트로: "나는 '내일'이다" ---------------- */
 
-function renderOpening() {
+function renderIntro() {
+  const wrap = document.createElement('div');
+
+  const sceneImg = document.createElement('div');
+  sceneImg.className = 'story-scene-bg place-bg';
+  sceneImg.style.backgroundImage = `url("${storyData.intro.image}")`;
+  wrap.appendChild(sceneImg);
+
   const stage = document.createElement('div');
   stage.className = 'story-stage';
   const dialogue = document.createElement('div');
   dialogue.className = 'story-dialogue';
   stage.appendChild(dialogue);
-  root.appendChild(stage);
+  wrap.appendChild(stage);
 
-  cicadaEl.classList.remove('silent');
-  playOpening(dialogue);
+  root.appendChild(wrap);
+  playIntro(dialogue);
 }
 
-async function playOpening(dialogue) {
-  const { lines, cicadaStopBeforeLine } = storyData.opening;
+async function playIntro(dialogue) {
+  for (const line of storyData.intro.lines) {
+    await typeText(dialogue, line);
+    await waitForClick(dialogue);
+  }
+  progress.phase = 'opening';
+  saveProgress();
+  render();
+}
+
+/* ---------------- 여는 장면 ---------------- */
+
+function renderOpening() {
+  const wrap = document.createElement('div');
+
+  const sceneImg = document.createElement('div');
+  sceneImg.className = 'story-scene-bg place-bg';
+  sceneImg.hidden = true;
+  wrap.appendChild(sceneImg);
+
+  const stage = document.createElement('div');
+  stage.className = 'story-stage';
+  const dialogue = document.createElement('div');
+  dialogue.className = 'story-dialogue';
+  stage.appendChild(dialogue);
+  wrap.appendChild(stage);
+  root.appendChild(wrap);
+
+  cicadaEl.classList.remove('silent');
+  playOpening(dialogue, sceneImg);
+}
+
+async function playOpening(dialogue, sceneImg) {
+  const { lines, cicadaStopBeforeLine, image } = storyData.opening;
   for (let i = 0; i < lines.length; i += 1) {
+    if (i === 0) {
+      sceneImg.hidden = false;
+      sceneImg.style.backgroundImage = `url("${image}")`;
+      tryPlayBgm();
+    } else if (i === 1) {
+      sceneImg.hidden = true;
+    }
     if (i >= cicadaStopBeforeLine) cicadaEl.classList.add('silent');
     await typeText(dialogue, lines[i]);
     await waitForClick(dialogue);

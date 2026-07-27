@@ -1,5 +1,14 @@
 {
+  "intro": {
+    "image": "assets/img/intro-cat-note.png",
+    "lines": [
+      "나는 '내일'이다.",
+      "늘 나에게 오던 그 아이는 나에게 \"내일 다시 올게\"라고 말했다.",
+      "그래서 나는 내 이름이 내일인 것 같다."
+    ]
+  },
   "opening": {
+    "image": "assets/img/opening-schoolyard.png",
     "lines": [
       "어제는 학교가 시끄러웠다. 아이들이 운동장에 쏟아져 나와 소리를 질렀고, 종이 여러 번 울렸다.",
       "오늘 아침, 나는 늘 그렇듯 후문 화단에서 눈을 떴다.",
