@@ -1,6 +1,15 @@
-// AI 정밀 채점 Edge Function. ANTHROPIC_API_KEY는 이 서버 환경에만 존재하며
-// 브라우저에는 절대 노출되지 않는다. 이 함수가 실패(키 없음/한도초과/타임아웃 등)해도
-// 클라이언트(js/scoring.js)가 규칙 기반 채점으로 자동 전환하므로 수업은 멈추지 않는다.
+// AI 정밀 채점 Edge Function (Google Gemini). GEMINI_API_KEY는 이 서버 환경에만
+// 존재하며 브라우저에는 절대 노출되지 않는다. 이 함수가 실패(키 없음/한도초과/
+// 타임아웃 등)해도 클라이언트(js/scoring.js)가 규칙 기반 채점으로 자동 전환하므로
+// 수업은 멈추지 않는다.
+
+// 'gemini-flash-latest'는 항상 최신 flash급 모델(현재 gemini-3.6-flash)로 해석된다.
+// 이 모델은 기본적으로 내부 "생각(thinking)" 토큰을 많이 써서, thinkingBudget을 낮게
+// 잡지 않으면 maxOutputTokens를 그 생각 토큰이 다 써버려 JSON 응답이 중간에 잘린다
+// (finishReason: "MAX_TOKENS"). 이 작업은 짧은 채점/분류라 깊은 추론이 필요 없으므로
+// thinkingBudget을 작게 고정한다.
+const GEMINI_MODEL = 'gemini-flash-latest';
+const THINKING_BUDGET = 100;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -76,7 +85,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) {
       return jsonResponse({ error: 'no_api_key' }, 401);
     }
@@ -91,35 +100,40 @@ Deno.serve(async (req: Request) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 9000);
 
-    let anthropicRes: Response;
+    let geminiRes: Response;
     try {
-      anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          temperature: 0,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: userPrompt }]
-        }),
-        signal: controller.signal
-      });
+      geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+            generationConfig: {
+              temperature: 0,
+              maxOutputTokens: 2000,
+              responseMimeType: 'application/json',
+              thinkingConfig: { thinkingBudget: THINKING_BUDGET }
+            }
+          }),
+          signal: controller.signal
+        }
+      );
     } finally {
       clearTimeout(timeout);
     }
 
-    if (!anthropicRes.ok) {
-      const detail = await anthropicRes.text();
-      return jsonResponse({ error: 'anthropic_error', detail }, 502);
+    if (!geminiRes.ok) {
+      const detail = await geminiRes.text();
+      return jsonResponse({ error: 'gemini_error', detail }, 502);
     }
 
-    const data = await anthropicRes.json();
-    const text: string = data?.content?.[0]?.text ?? '';
+    const data = await geminiRes.json();
+    const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
     let parsed: any = null;
     try {
