@@ -39,13 +39,16 @@ const notebookCountEl = document.getElementById('notebook-count');
 const notebookPanel = document.getElementById('notebook-panel');
 const notebookList = document.getElementById('notebook-list');
 const bgmDark = document.getElementById('bgm-dark');
+const bgmReunion = document.getElementById('bgm-reunion');
 bgmDark.loop = true;
+bgmReunion.loop = true;
 const sfxBell = document.getElementById('sfx-bell');
 const bgmToggleBtn = document.getElementById('bgm-toggle');
 
 const BGM_KEY = 'ba_bgm_muted';
 const BGM_VOLUME = 0.35;
 let bgmMuted = localStorage.getItem(BGM_KEY) === '1';
+let activeTrack = 'dark'; // 'dark' | 'reunion'
 
 document.getElementById('notebook-open').addEventListener('click', openNotebook);
 document.getElementById('notebook-close').addEventListener('click', closeNotebook);
@@ -63,8 +66,14 @@ bgmToggleBtn.addEventListener('click', () => {
   updateBgmToggleUI();
   if (bgmMuted) {
     bgmDark.pause();
+    bgmReunion.pause();
   } else if (progress.phase !== 'coda' && progress.phase !== 'done') {
-    tryPlayBgm();
+    if (activeTrack === 'reunion') {
+      bgmReunion.volume = BGM_VOLUME;
+      bgmReunion.play().catch(() => {});
+    } else {
+      tryPlayBgm();
+    }
   }
 });
 
@@ -78,6 +87,17 @@ function tryPlayBgm() {
   bgmDark.play().catch(() => {
     document.addEventListener('click', () => tryPlayBgm(), { once: true });
   });
+}
+
+function crossfadeToReunion() {
+  activeTrack = 'reunion';
+  fadeAudio(bgmDark, 0, 2000);
+  if (bgmMuted) return;
+  bgmReunion.volume = 0;
+  bgmReunion.play().catch(() => {
+    document.addEventListener('click', () => bgmReunion.play().catch(() => {}), { once: true });
+  });
+  fadeAudio(bgmReunion, BGM_VOLUME, 2000);
 }
 
 function playBellOnce() {
@@ -207,6 +227,7 @@ function render() {
 
   if (progress.phase === 'coda' || progress.phase === 'done') {
     bgmDark.pause();
+    bgmReunion.pause();
     document.body.classList.add('story-bright');
   } else {
     tryPlayBgm();
@@ -500,12 +521,18 @@ function renderGate() {
 
 function onGateCorrect() {
   const scene = storyData.gateScene;
+
+  try {
+    crossfadeToReunion();
+  } catch {
+    // 배경음악 전환에 문제가 있어도 이야기는 계속 진행한다.
+  }
+
   renderTraceScene(scene.arriveImage, scene.arriveLines, () => {
     try {
-      fadeAudio(bgmDark, 0, 1500);
       document.body.classList.add('story-bright');
     } catch {
-      // 오디오/화면 전환에 문제가 있어도 이야기는 계속 진행한다.
+      // 화면 전환에 문제가 있어도 이야기는 계속 진행한다.
     }
 
     renderTraceScene(scene.runImage, scene.runLines, () => {
