@@ -211,6 +211,8 @@ textarea#q-answer:focus { outline: none; border-color: var(--sunset); }
 .rank-order { font-family: var(--font-title); color: var(--cat); }
 .rank-nick { word-break: break-word; }
 .rank-score { font-family: var(--font-title); color: var(--sunset); }
+.rank-divider { text-align: center; color: var(--cat); padding: 4px 0; letter-spacing: 2px; }
+.rank-mine-missing { text-align: center; color: var(--cat); font-size: .9rem; padding: 10px 0; }
 
 @media print {
   .nick-header, .row-btns, #ai-toggle, .teacher-toggle { display: none !important; }

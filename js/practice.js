@@ -553,7 +553,8 @@ function renderRanking() {
     });
     const listEl = wrap.querySelector('#rank-list');
     listEl.textContent = '불러오는 중...';
-    const { data, error } = await getPracticeRankings({ school_code: tab === 'school' ? getSchoolCode() : null });
+    // 상위 20명만 보여줄 거지만, 내 순위가 20위 밖이어도 알려주려면 전체를 받아와야 한다.
+    const { data, error } = await getPracticeRankings({ school_code: tab === 'school' ? getSchoolCode() : null, limit: 500 });
     if (error) {
       listEl.textContent = '랭킹을 불러오지 못했어.';
       return;
@@ -563,12 +564,30 @@ function renderRanking() {
       return;
     }
     const myNick = getNickname();
-    listEl.innerHTML = data.map((row, i) => `
+    const top20 = data.slice(0, 20);
+    const myIndex = data.findIndex((row) => row.nickname === myNick);
+
+    let html = top20.map((row, i) => `
       <div class="rank-row ${row.nickname === myNick ? 'rank-me' : ''}">
         <span class="rank-order">${i + 1}</span>
         <span class="rank-nick">${escapeHtml(row.nickname)}</span>
         <span class="rank-score">${row.total_score}점</span>
       </div>`).join('');
+
+    if (myIndex >= 20) {
+      const mine = data[myIndex];
+      html += `
+        <div class="rank-divider">・・・</div>
+        <div class="rank-row rank-me">
+          <span class="rank-order">${myIndex + 1}</span>
+          <span class="rank-nick">${escapeHtml(mine.nickname)}</span>
+          <span class="rank-score">${mine.total_score}점</span>
+        </div>`;
+    } else if (myIndex === -1 && myNick) {
+      html += `<div class="rank-mine-missing">아직 20문제 모드로 랭킹에 등록한 기록이 없어.</div>`;
+    }
+
+    listEl.innerHTML = html;
   }
 
   wrap.querySelectorAll('#rank-tabs button').forEach((btn) => {
