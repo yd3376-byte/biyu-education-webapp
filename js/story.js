@@ -134,6 +134,12 @@ async function init() {
 
   storyData = await loadJson('data/story.json');
 
+  const isReplay = new URLSearchParams(location.search).get('replay') === '1';
+  if (isReplay) {
+    startReplay();
+    return;
+  }
+
   updateClock();
   updateNotebookBadge();
   render();
@@ -662,6 +668,7 @@ async function playCoda(dialogue, lines) {
 /* ---------------- 완료 화면 ---------------- */
 
 function renderDone() {
+  root.innerHTML = '';
   const wrap = document.createElement('div');
   const { vehicle, name } = progress.catName || {};
   wrap.innerHTML = `
@@ -672,7 +679,88 @@ function renderDone() {
     ${vehicle ? `<p class="hint" style="text-align:center;margin-top:10px;">교실에서 내가 남긴 말: "${escapeHtml(vehicle)}"</p>` : ''}
     <p style="text-align:center;margin-top:16px;">저장 완료! 우리 반 친구들이 지어준 이름도 구경해볼까?</p>
     <a class="btn" style="display:block;text-align:center;margin-top:8px;" href="names.html">우리 반이 지어준 이름들 보기</a>
+    <a class="btn btn-ghost" style="display:block;text-align:center;margin-top:8px;" href="story.html?replay=1">이야기 처음부터 다시보기</a>
     <a class="btn btn-ghost" style="display:block;text-align:center;margin-top:8px;" href="index.html">메인으로</a>
   `;
   root.appendChild(wrap);
+}
+
+/* ---------------- 다시보기 모드 (완료 후 전체 이야기 훑어보기) ---------------- */
+
+function replayImage(image, lines) {
+  return new Promise((resolve) => {
+    if (image) {
+      renderTraceScene(image, lines, resolve);
+    } else {
+      const { dialogue } = makeStage();
+      playLines(dialogue, lines).then(resolve);
+    }
+  });
+}
+
+async function replayOpening() {
+  const { lines, cicadaStopBeforeLine, image, finalImage, finalLines } = storyData.opening;
+  const { wrap, dialogue } = makeStage();
+
+  const sceneImg = document.createElement('div');
+  sceneImg.className = 'story-scene-bg place-bg';
+  sceneImg.hidden = true;
+  wrap.insertBefore(sceneImg, wrap.firstChild);
+
+  cicadaEl.classList.remove('silent');
+  tryPlayBgm();
+
+  for (let i = 0; i < lines.length; i += 1) {
+    if (i === 0) {
+      sceneImg.hidden = false;
+      sceneImg.style.backgroundImage = `url("${image}")`;
+    } else if (i === 1) {
+      sceneImg.hidden = true;
+    }
+    if (i >= cicadaStopBeforeLine) cicadaEl.classList.add('silent');
+    await typeText(dialogue, lines[i]);
+    await waitForClick(dialogue);
+  }
+
+  sceneImg.hidden = false;
+  sceneImg.style.backgroundImage = `url("${finalImage}")`;
+  await playLines(dialogue, finalLines);
+}
+
+async function startReplay() {
+  document.getElementById('story-reset-btn').hidden = true;
+  document.getElementById('notebook-open').hidden = true;
+
+  await replayImage(storyData.intro.image, storyData.intro.lines);
+  await replayOpening();
+
+  for (const round of storyData.searchRounds) {
+    await replayImage(null, round.intro);
+    await replayImage(round.traceImage, round.traceLines);
+  }
+
+  const classroomScene = storyData.classroomScene;
+  await replayImage(null, [classroomScene.transitionLine]);
+  const sentence = progress.classroomSentence || classroomScene.exampleSentence;
+  await replayImage(null, [`"${classroomScene.prompt}"`, `→ "${sentence}"`]);
+  const afterLine = classroomScene.afterTransitionTemplate.replace('{sentence}', sentence);
+  await replayImage(classroomScene.afterImage, [afterLine, ...classroomScene.afterLines]);
+  await replayImage(classroomScene.bagImage, classroomScene.bagLines);
+
+  const gateScene = storyData.gateScene;
+  await replayImage(gateScene.arriveImage, gateScene.arriveLines);
+  crossfadeToReunion();
+  document.body.classList.add('story-bright');
+  await replayImage(gateScene.runImage, gateScene.runLines);
+  await replayImage(gateScene.hugImage, gateScene.hugLines);
+  const name = (progress.catName && progress.catName.name) || '?';
+  await replayImage(gateScene.namingImage, [gateScene.namingPrompt, `→ "${name}"`]);
+  const afterNamingLine = gateScene.afterNamingTemplate.replace('{name}', name);
+  await replayImage(null, [afterNamingLine]);
+
+  for (const scene of storyData.coda) {
+    await replayImage(scene.image, scene.lines);
+  }
+
+  renderDone();
 }
