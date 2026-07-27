@@ -5,7 +5,7 @@ export const BANNED_WORDS = [
   '지랄', '닥쳐', '미친놈', '미친년', '좆', '섹스', '자살', '개새'
 ];
 
-const SIMILE_RE = /같(은|이|아|아서|던)|처럼|듯이?|마냥|양\s/;
+const SIMILE_RE = /같(은|이|아|아서|던|다)|처럼|듯이?|마냥|양\s/;
 const METAPHOR_RE = /(는|은)\s*\S+(이다|다)[.!]?$/;
 const LONG_DIGITS_RE = /\d{7,}/;
 

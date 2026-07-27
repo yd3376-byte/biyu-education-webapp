@@ -501,8 +501,12 @@ function renderGate() {
 function onGateCorrect() {
   const scene = storyData.gateScene;
   renderTraceScene(scene.arriveImage, scene.arriveLines, () => {
-    fadeAudio(bgmDark, 0, 1500);
-    document.body.classList.add('story-bright');
+    try {
+      fadeAudio(bgmDark, 0, 1500);
+      document.body.classList.add('story-bright');
+    } catch {
+      // 오디오/화면 전환에 문제가 있어도 이야기는 계속 진행한다.
+    }
 
     renderTraceScene(scene.runImage, scene.runLines, () => {
       renderTraceScene(scene.hugImage, scene.hugLines, () => {
