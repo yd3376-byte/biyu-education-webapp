@@ -39,9 +39,9 @@ const notebookCountEl = document.getElementById('notebook-count');
 const notebookPanel = document.getElementById('notebook-panel');
 const notebookList = document.getElementById('notebook-list');
 const bgmDark = document.getElementById('bgm-dark');
+bgmDark.loop = true;
 const sfxBell = document.getElementById('sfx-bell');
 const bgmToggleBtn = document.getElementById('bgm-toggle');
-const sunRevealEl = document.getElementById('sun-reveal');
 
 const BGM_KEY = 'ba_bgm_muted';
 const BGM_VOLUME = 0.35;
@@ -208,7 +208,6 @@ function render() {
   if (progress.phase === 'coda' || progress.phase === 'done') {
     bgmDark.pause();
     document.body.classList.add('story-bright');
-    sunRevealEl.classList.add('show');
   } else {
     tryPlayBgm();
   }
@@ -504,7 +503,6 @@ function onGateCorrect() {
   renderTraceScene(scene.arriveImage, scene.arriveLines, () => {
     fadeAudio(bgmDark, 0, 1500);
     document.body.classList.add('story-bright');
-    sunRevealEl.classList.add('show');
 
     renderTraceScene(scene.runImage, scene.runLines, () => {
       renderTraceScene(scene.hugImage, scene.hugLines, () => {
