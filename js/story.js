@@ -32,6 +32,7 @@ const notebookCountEl = document.getElementById('notebook-count');
 const notebookPanel = document.getElementById('notebook-panel');
 const notebookList = document.getElementById('notebook-list');
 const bgmDark = document.getElementById('bgm-dark');
+const sfxBell = document.getElementById('sfx-bell');
 const bgmToggleBtn = document.getElementById('bgm-toggle');
 const sunRevealEl = document.getElementById('sun-reveal');
 
@@ -71,6 +72,13 @@ function tryPlayBgm() {
     // 브라우저 자동재생 정책으로 막힌 경우, 다음 클릭에서 재시도
     document.addEventListener('click', () => tryPlayBgm(), { once: true });
   });
+}
+
+function playBellOnce() {
+  if (bgmMuted) return;
+  sfxBell.currentTime = 0;
+  sfxBell.volume = 0.7;
+  sfxBell.play().catch(() => {});
 }
 
 function fadeAudio(audio, toVolume, durationMs) {
@@ -238,6 +246,7 @@ async function playOpening(dialogue, sceneImg) {
       sceneImg.hidden = false;
       sceneImg.style.backgroundImage = `url("${image}")`;
       tryPlayBgm();
+      playBellOnce();
     } else if (i === 1) {
       sceneImg.hidden = true;
     }
