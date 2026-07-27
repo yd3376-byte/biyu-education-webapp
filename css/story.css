@@ -192,21 +192,22 @@ body.story-body.story-bright .story-notebook-btn {
 }
 .trace-card .trace-text { white-space: pre-wrap; line-height: 1.8; }
 
-/* 표현 입력 */
+/* 표현 입력 (카드가 흰 배경이므로 어두운 테마 글자색을 물려받지 않도록 명시) */
+.expr-box { color: var(--ink); }
 .expr-box textarea {
   width: 100%;
   min-height: 90px;
-  background: rgba(255,255,255,.08);
-  color: var(--cream);
-  border: 2px solid rgba(255,255,255,.2);
+  background: #fff;
+  color: var(--ink);
+  border: 2px solid #E7DFD3;
   border-radius: calc(var(--radius) / 2);
   padding: 12px;
   resize: vertical;
 }
-.expr-box textarea::placeholder { color: rgba(255,246,233,.4); }
-.expr-feedback { min-height: 1.4em; font-size: .92rem; margin: 8px 0; }
-.expr-feedback.error { color: #F3A79C; }
-.expr-feedback.success { color: #B9E3CC; }
+.expr-box textarea::placeholder { color: var(--cat); }
+.expr-feedback { min-height: 1.4em; font-size: .92rem; margin: 8px 0; color: var(--ink); }
+.expr-feedback.error { color: var(--warn); }
+.expr-feedback.success { color: var(--leaf); }
 .expr-example {
   margin-top: 10px;
   padding: 12px;

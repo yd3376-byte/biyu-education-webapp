@@ -396,6 +396,7 @@ async function playClassroomTransition(dialogue) {
 
 function renderClassroomExpr() {
   const scene = storyData.classroomScene;
+  root.innerHTML = '';
   const wrap = document.createElement('div');
 
   const stage = document.createElement('div');
