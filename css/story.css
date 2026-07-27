@@ -2,6 +2,44 @@ body.story-body {
   background: var(--dusk);
   color: var(--cream);
   min-height: 100vh;
+  transition: background-color 2.5s ease, color 2.5s ease;
+}
+
+/* 아이를 만나는 순간 — 어두운 학교에 햇빛이 드는 연출 */
+body.story-body.story-bright {
+  background: #F6DFC0;
+  color: var(--ink);
+}
+body.story-body.story-bright .story-dialogue {
+  background: rgba(255,255,255,.55);
+  border-color: rgba(46,42,38,.15);
+  color: var(--ink);
+  transition: background-color 2.5s ease, border-color 2.5s ease, color 2.5s ease;
+}
+body.story-body.story-bright .nick-header span { color: var(--ink); }
+body.story-body.story-bright .story-top { color: rgba(46,42,38,.65); }
+body.story-body.story-bright .story-notebook-btn {
+  background: rgba(46,42,38,.08);
+  color: var(--ink);
+}
+
+.sun-reveal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 32%, rgba(255,246,233,.95), rgba(242,166,90,.4) 45%, rgba(242,166,90,0) 75%);
+  opacity: 0;
+  transition: opacity 2.5s ease;
+}
+.sun-reveal-overlay.show { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.story-body,
+  body.story-body.story-bright .story-dialogue,
+  .sun-reveal-overlay {
+    transition: none;
+  }
 }
 
 .story-body .nick-header { color: var(--cat); }
@@ -13,10 +51,18 @@ body.story-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 8px 0;
   font-size: .95rem;
   color: #C9CFDB;
 }
+.story-top > div {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.story-top > div::-webkit-scrollbar { display: none; }
 
 .story-clock { font-family: var(--font-title); letter-spacing: .5px; }
 
@@ -24,9 +70,11 @@ body.story-body {
   background: rgba(255,255,255,.08);
   color: var(--cream);
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   min-height: 40px;
-  font-size: .9rem;
+  font-size: .82rem;
+  white-space: nowrap;
+  flex: none;
 }
 
 /* 매미 소리 연출 */

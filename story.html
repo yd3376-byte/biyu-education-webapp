@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="css/story.css" />
 </head>
 <body class="story-body">
+  <audio id="bgm-dark" src="assets/audio/story-dark.mp3" loop preload="auto"></audio>
+  <div class="sun-reveal-overlay" id="sun-reveal"></div>
   <div class="cicada-layer" id="cicada">맴——————　맴——————　맴——————</div>
 
   <div class="app">
@@ -16,8 +18,9 @@
     <div class="story-top">
       <div class="story-clock" id="story-clock">오전 8:20</div>
       <div style="display:flex; gap:8px;">
+        <button class="story-notebook-btn" id="bgm-toggle" title="배경음악 켜기/끄기">🔊</button>
         <button class="story-notebook-btn" id="story-reset-btn">↺ 처음부터</button>
-        <button class="story-notebook-btn" id="notebook-open">📓 단서 수첩 (<span id="notebook-count">0</span>)</button>
+        <button class="story-notebook-btn" id="notebook-open">📓 수첩 (<span id="notebook-count">0</span>)</button>
       </div>
     </div>
 

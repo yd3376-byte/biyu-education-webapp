@@ -31,6 +31,13 @@ const cicadaEl = document.getElementById('cicada');
 const notebookCountEl = document.getElementById('notebook-count');
 const notebookPanel = document.getElementById('notebook-panel');
 const notebookList = document.getElementById('notebook-list');
+const bgmDark = document.getElementById('bgm-dark');
+const bgmToggleBtn = document.getElementById('bgm-toggle');
+const sunRevealEl = document.getElementById('sun-reveal');
+
+const BGM_KEY = 'ba_bgm_muted';
+const BGM_VOLUME = 0.35;
+let bgmMuted = localStorage.getItem(BGM_KEY) === '1';
 
 document.getElementById('notebook-open').addEventListener('click', openNotebook);
 document.getElementById('notebook-close').addEventListener('click', closeNotebook);
@@ -40,6 +47,47 @@ document.getElementById('story-reset-btn').addEventListener('click', () => {
     location.reload();
   }
 });
+
+updateBgmToggleUI();
+bgmToggleBtn.addEventListener('click', () => {
+  bgmMuted = !bgmMuted;
+  localStorage.setItem(BGM_KEY, bgmMuted ? '1' : '0');
+  updateBgmToggleUI();
+  if (bgmMuted) {
+    bgmDark.pause();
+  } else if (progress.phase !== 'naming' && progress.phase !== 'done') {
+    tryPlayBgm();
+  }
+});
+
+function updateBgmToggleUI() {
+  bgmToggleBtn.textContent = bgmMuted ? '🔇' : '🔊';
+}
+
+function tryPlayBgm() {
+  if (bgmMuted) return;
+  bgmDark.volume = BGM_VOLUME;
+  bgmDark.play().catch(() => {
+    // 브라우저 자동재생 정책으로 막힌 경우, 다음 클릭에서 재시도
+    document.addEventListener('click', () => tryPlayBgm(), { once: true });
+  });
+}
+
+function fadeAudio(audio, toVolume, durationMs) {
+  const steps = 20;
+  const stepTime = durationMs / steps;
+  const startVolume = audio.volume;
+  const diff = toVolume - startVolume;
+  let i = 0;
+  const timer = setInterval(() => {
+    i += 1;
+    audio.volume = Math.min(1, Math.max(0, startVolume + diff * (i / steps)));
+    if (i >= steps) {
+      clearInterval(timer);
+      if (toVolume <= 0) audio.pause();
+    }
+  }, stepTime);
+}
 
 async function init() {
   identity = await ensureIdentity();
@@ -107,6 +155,16 @@ function waitForClick(el) {
 
 function render() {
   root.innerHTML = '';
+
+  if (progress.phase === 'naming' || progress.phase === 'done') {
+    // 새로고침 등으로 이 단계부터 다시 열린 경우, 어두운 배경음악 없이 밝은 화면으로 표시
+    bgmDark.pause();
+    document.body.classList.add('story-bright');
+    sunRevealEl.classList.add('show');
+  } else {
+    tryPlayBgm();
+  }
+
   switch (progress.phase) {
     case 'opening': renderOpening(); break;
     case 'round': renderRound(); break;
@@ -323,7 +381,12 @@ async function playEnding(dialogue) {
     await waitForClick(dialogue);
   }
   dialogue.textContent = '···';
+  fadeAudio(bgmDark, 0, 1500);
   await new Promise((r) => setTimeout(r, 1200));
+
+  document.body.classList.add('story-bright');
+  sunRevealEl.classList.add('show');
+
   await typeText(dialogue, storyData.ending.arrivalLine);
   await waitForClick(dialogue);
 
