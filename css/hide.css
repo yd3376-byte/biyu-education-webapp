@@ -1,3 +1,5 @@
+/* 사료 숨기기(문제내기) / 사료 찾기 — 버튼3 */
+
 .hide-title { text-align: center; margin: 12px 0 4px; }
 .hide-sub { text-align: center; color: var(--cat); margin-bottom: 20px; }
 
@@ -11,43 +13,104 @@
   align-items: center;
   gap: 14px;
   text-align: left;
+  width: 100%;
 }
-.hide-entry-card .icon { font-size: 2rem; }
+.hide-entry-card .icon { font-size: 2rem; flex: none; }
 .hide-entry-card .label { font-family: var(--font-title); font-size: 1.1rem; }
 .hide-entry-card .desc { font-size: .88rem; color: var(--cat); margin-top: 2px; }
 
-/* 장소 선택 그리드 */
-.place-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+.hide-my-trails { margin-top: 18px; }
+.hide-my-trails h3 { font-family: var(--font-title); font-size: 1rem; margin-bottom: 8px; }
+.trail-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
 }
-.place-pick {
-  aspect-ratio: 4 / 3;
-  border: 3px solid transparent;
-  border-radius: var(--radius);
-  cursor: pointer;
-  overflow: hidden;
-}
-.place-pick.selected { border-color: var(--sunset); }
-.place-pick .place-bg-fallback .place-name { font-size: 1rem; }
+.trail-list-item .trail-title { font-family: var(--font-title); }
+.trail-list-item .trail-meta { font-size: .82rem; color: var(--cat); }
 
-/* 핀 찍는 캔버스 */
-.pin-board {
+/* ---------------- 무대 (이미지 + 존) — 6-1 종횡비 고정 ---------------- */
+
+.stage-wrap { margin-bottom: 14px; }
+.stage {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  max-width: 900px;
+  margin: 0 auto;
   border-radius: var(--radius);
   overflow: hidden;
-  cursor: crosshair;
+  background: #d9cdb8;
   touch-action: manipulation;
 }
+.stage img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.stage-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--cat);
+  font-family: var(--font-title);
+  background: linear-gradient(160deg, #e7ddc9, #d9cdb8);
+}
+
+.zone {
+  position: absolute;
+  border: 2px dashed rgba(255, 246, 233, .55);
+  background: rgba(255, 246, 233, .10);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.zone:hover, .zone:active {
+  background: rgba(242, 166, 90, .35);
+  border-color: var(--sunset);
+}
+.zone.picked {
+  background: rgba(111, 162, 135, .45);
+  border-color: var(--leaf);
+  border-style: solid;
+}
+.zone.reveal-hint {
+  background: rgba(255, 246, 233, .55);
+  border-color: #fff;
+  animation: zone-pulse 1s ease-in-out infinite;
+}
+@keyframes zone-pulse {
+  0%, 100% { opacity: .6; }
+  50% { opacity: 1; }
+}
+.zone-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
+  pointer-events: none;
+  font-family: var(--font-title);
+  text-align: center;
+  padding: 2px;
+}
+
 .pin-marker {
   position: absolute;
-  width: 32px;
-  height: 32px;
-  margin-left: -16px;
-  margin-top: -32px;
+  width: 30px;
+  height: 30px;
+  margin-left: -15px;
+  margin-top: -30px;
   background: var(--warn);
   color: #fff;
   border-radius: 50% 50% 50% 0;
@@ -57,88 +120,14 @@
   justify-content: center;
   font-family: var(--font-title);
   box-shadow: var(--shadow);
+  pointer-events: none;
 }
-.pin-marker span { transform: rotate(-45deg); }
+.pin-marker span { transform: rotate(-45deg); font-size: .8rem; }
 
-.pin-list { margin-top: 14px; }
-.pin-list-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-}
-.pin-list-item .pin-no {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: var(--warn);
-  color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-title);
-  flex: none;
-}
-.pin-list-item .pin-text { flex: 1; font-size: .9rem; }
-.pin-list-item .pin-text .hint { color: var(--cat); }
-.pin-list-item button { background: none; color: var(--warn); min-height: auto; padding: 4px 8px; }
-
-/* 입력 시트 */
-.sheet-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.45);
-  display: flex; align-items: flex-end;
-  z-index: 900;
-}
-.sheet {
-  background: #fff;
-  width: 100%;
-  border-radius: var(--radius) var(--radius) 0 0;
-  padding: 20px 18px 28px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-/* 완료 화면: 방 코드 */
-.room-code-card {
-  text-align: center;
-  background: linear-gradient(160deg, var(--sunset), #E98C6B);
-  color: var(--ink);
-}
-.room-code-card .code {
-  font-family: var(--font-title);
-  font-size: 2.2rem;
-  letter-spacing: 4px;
-  margin: 10px 0;
-}
-.room-link-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-.room-link-row input {
-  flex: 1;
-  min-height: 44px;
-  padding: 8px 10px;
-  border-radius: calc(var(--radius) / 2);
-  border: 2px solid #E7DFD3;
-  font-size: .85rem;
-}
-
-/* 방 목록 */
-.room-card {
-  margin-bottom: 10px;
-}
-.room-card .room-meta { font-size: .85rem; color: var(--cat); margin-top: 4px; }
-
-/* 힌트/판정 화면 */
-.play-hint-box {
-  text-align: center;
-  font-size: 1.05rem;
-  margin-bottom: 12px;
-}
 .ripple-wrong {
   position: absolute;
-  width: 60px; height: 60px;
-  margin-left: -30px; margin-top: -30px;
+  width: 56px; height: 56px;
+  margin-left: -28px; margin-top: -28px;
   border: 3px solid var(--warn);
   border-radius: 50%;
   animation: ripple-anim .6s ease-out forwards;
@@ -148,24 +137,140 @@
   from { transform: scale(.4); opacity: 1; }
   to { transform: scale(2); opacity: 0; }
 }
-.glow-hint-circle {
+
+/* ---------------- 단서 카드 / 입력 ---------------- */
+
+.clue-card { margin-bottom: 14px; }
+.clue-card .clue-label { font-size: .82rem; color: var(--cat); margin-bottom: 6px; }
+.clue-card .clue-text { font-size: 1.1rem; line-height: 1.5; }
+
+.clue-input-box textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 12px 14px;
+  border-radius: calc(var(--radius) / 2);
+  border: 2px solid #E7DFD3;
+  background: #fff;
+  color: var(--ink);
+  resize: vertical;
+  margin-bottom: 10px;
+}
+.clue-input-box textarea:focus { outline: none; border-color: var(--sunset); }
+.clue-feedback { min-height: 1.4em; font-size: .88rem; color: var(--warn); margin-bottom: 8px; }
+.clue-feedback.ok { color: var(--leaf); }
+
+/* ---------------- 길 짜기 (장소 순서 선택) ---------------- */
+
+.place-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.place-pick {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border: 3px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+.place-pick .place-pick-name {
+  background: rgba(0,0,0,.45);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-title);
+  font-size: .82rem;
+}
+.place-pick.selected { border-color: var(--sunset); }
+.place-pick .place-pick-order {
   position: absolute;
+  top: 8px; left: 8px;
+  width: 26px; height: 26px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,246,233,.55), rgba(255,246,233,0) 70%);
+  background: var(--sunset);
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-title);
+  font-size: .85rem;
+}
+.place-pick.disabled { opacity: .4; pointer-events: none; }
+
+.route-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  font-size: .9rem;
+}
+.route-summary .step { color: var(--cat); }
+
+/* ---------------- 완료 화면 ---------------- */
+
+.trail-done-card { text-align: center; }
+.trail-done-card .lastword {
+  margin-top: 10px;
+  font-style: normal;
+  color: var(--ink);
+  background: #FBF3E5;
+  border-radius: calc(var(--radius) / 2);
+  padding: 12px 14px;
+}
+.trail-stat-row {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: 10px 0;
+  font-size: .92rem;
+  color: var(--cat);
+}
+
+.share-link-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.share-link-row input {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius) / 2);
+  border: 2px solid #E7DFD3;
+  font-size: .78rem;
+}
+
+/* ---------------- ?edit=1 좌표 도구 (개발용) ---------------- */
+
+.edit-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--dusk);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius) / 2);
+  margin-bottom: 10px;
+  font-size: .82rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.edit-drag-rect {
+  position: absolute;
+  border: 2px solid #4CD3FF;
+  background: rgba(76, 211, 255, .2);
   pointer-events: none;
 }
 
-/* 방 기록판 (연습하기 랭킹과 동일한 행 스타일) */
-.rank-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: calc(var(--radius) / 2);
-  margin-bottom: 6px;
-  background: #fff;
+@media (min-width: 768px) {
+  .hide-entry { flex-direction: row; }
 }
-.rank-row.me { background: #FFF1DD; border: 2px solid var(--sunset); }
-.rank-row .rank-no { width: 28px; font-family: var(--font-title); color: var(--cat); }
-.rank-row .rank-nick { flex: 1; }
-.rank-row .rank-score { font-family: var(--font-title); color: var(--sunset); }

@@ -1,238 +1,217 @@
-import { loadPlaceBg, loadJson, showToast, escapeHtml } from './common.js';
-import { getRoomsBySchool, getRoomByCode, savePlay, getRoomLeaderboard } from './db.js';
+// 사료 찾기 (밥길 따라가기). js/db.js/Supabase는 전혀 참조하지 않는다 (MVP).
 
-const HIT_RADIUS_RATIO = 0.08;
-const GLOW_RADIUS_RATIO = 0.20;
-const REVEAL_AFTER_MISSES = 5;
+import { loadJson, escapeHtml } from './common.js';
+import { toRatio, hitTest, expandSmallZones, distanceToZoneCenter } from './hide-core.js';
 
-export async function initPlay(container, { identity, roomCode, onExit }) {
-  const places = await loadJson('data/places.json');
-  function placeById(id) {
-    return places.find((p) => p.id === id);
+let placesIndex = null;
+
+async function loadPlacesIndex() {
+  if (!placesIndex) placesIndex = await loadJson('data/places/index.json');
+  return placesIndex;
+}
+
+async function loadZones(placeId) {
+  try {
+    return await loadJson(`data/places/${placeId}.json`);
+  } catch {
+    return [];
   }
+}
 
-  if (roomCode) {
-    await enterRoom(roomCode.toUpperCase());
-  } else {
-    renderSchoolEntry();
-  }
+export async function initPlay(root, { trail, onExit }) {
+  const places = await loadPlacesIndex();
+  const state = {
+    trail,
+    stopIndex: 0,
+    attemptsThisStop: 0,
+    totalAttempts: 0,
+    startTime: Date.now()
+  };
 
-  function renderSchoolEntry() {
-    container.innerHTML = `
-      <button class="btn btn-ghost" id="back-btn" style="margin-bottom:12px;">← 뒤로</button>
-      <h2 class="title">어느 학교 방을 찾아볼까?</h2>
-      <div class="field">
-        <label>학교 코드</label>
-        <input id="school-input" maxlength="8" value="${escapeHtml(identity.schoolCode)}" />
-      </div>
-      <button class="btn" id="list-btn" style="width:100%;">방 목록 보기</button>
-    `;
-    container.querySelector('#back-btn').addEventListener('click', onExit);
-    container.querySelector('#list-btn').addEventListener('click', () => {
-      const code = container.querySelector('#school-input').value.trim().toUpperCase();
-      if (!code) return;
-      renderRoomList(code);
-    });
-  }
+  await renderClueScreen(root, places, state, onExit);
+}
 
-  async function renderRoomList(schoolCode) {
-    container.innerHTML = `
-      <button class="btn btn-ghost" id="back-btn" style="margin-bottom:12px;">← 뒤로</button>
-      <h2 class="title">${escapeHtml(schoolCode)} 방 목록</h2>
-      <div id="room-list"><p class="hint">불러오는 중...</p></div>
-    `;
-    container.querySelector('#back-btn').addEventListener('click', renderSchoolEntry);
+function placeById(places, id) {
+  return places.find((p) => p.id === id) || { id, name: id, image: '', aspect: 1.5, miss: '여긴 아니다.' };
+}
 
-    const { data, error } = await getRoomsBySchool(schoolCode);
-    const listEl = container.querySelector('#room-list');
+async function renderClueScreen(root, places, state, onExit) {
+  const stop = state.trail.stops[state.stopIndex];
+  const place = placeById(places, stop.placeId);
+  const zones = await loadZones(stop.placeId);
+  state.attemptsThisStop = 0;
 
-    if (error) {
-      listEl.innerHTML = '<p class="hint">방 목록을 불러올 수 없어. 잠시 후 다시 시도해줘.</p>';
-      return;
-    }
-    if (!data || data.length === 0) {
-      listEl.innerHTML = '<p class="hint">아직 만들어진 방이 없어.</p>';
-      return;
-    }
+  root.innerHTML = `
+    <div class="card clue-card">
+      <div class="clue-label">${state.stopIndex + 1} / ${state.trail.stops.length}번째 사료</div>
+      <div class="clue-text">"${escapeHtml(stop.objectClue)}"</div>
+    </div>
+    <div class="stage-wrap">
+      <div class="stage" id="play-stage" style="aspect-ratio:${place.aspect || 1.5};"></div>
+    </div>
+    <div class="play-hint-box" id="play-hint"></div>
+    <button class="btn btn-ghost" id="exit-btn" style="display:block; margin:14px auto 0;">그만두기</button>
+  `;
+  root.querySelector('#exit-btn').addEventListener('click', onExit);
 
-    const cards = await Promise.all(data.map(async (room) => {
-      const { data: plays } = await getRoomLeaderboard(room.id, 100);
-      const clearCount = plays ? plays.length : 0;
-      const place = placeById(room.background);
-      const date = new Date(room.created_at).toLocaleDateString('ko-KR');
-      return `
-        <button class="card room-card" data-code="${escapeHtml(room.room_code)}" style="width:100%;text-align:left;">
-          <div>${place ? escapeHtml(place.emoji) : ''} ${escapeHtml(room.creator_nickname)}의 방</div>
-          <div class="room-meta">${place ? escapeHtml(place.name) : ''} · 쪽지 ${room.note_count}개 · ${date} · 클리어 ${clearCount}명</div>
-        </button>
-      `;
-    }));
+  const stage = root.querySelector('#play-stage');
+  renderStageImage(stage, place);
+  renderZoneOutlines(stage, zones);
 
-    listEl.innerHTML = cards.join('');
-    listEl.querySelectorAll('.room-card').forEach((btn) => {
-      btn.addEventListener('click', () => enterRoom(btn.dataset.code));
-    });
-  }
+  const hintBox = root.querySelector('#play-hint');
+  const imgEl = stage.querySelector('img, .stage-placeholder');
 
-  async function enterRoom(code) {
-    container.innerHTML = '<p class="hint">방에 입장하는 중...</p>';
-    const { data: room, error } = await getRoomByCode(code);
+  stage.addEventListener('pointerdown', async (e) => {
+    if (e.target.closest('.zone') === null && e.target !== imgEl && !stage.contains(e.target)) return;
+    const point = toRatio(e.clientX, e.clientY, imgEl);
+    const effectiveZones = expandSmallZones(zones, imgEl);
+    const zoneId = hitTest(point, effectiveZones);
 
-    if (error || !room) {
-      showToast('방을 찾을 수 없어. 코드를 다시 확인해줘.', 'error');
-      renderSchoolEntry();
+    if (zoneId === stop.zoneId) {
+      onFound(root, places, state, onExit);
       return;
     }
 
-    const playState = {
-      room,
-      notes: [...room.notes].sort((a, b) => a.order_index - b.order_index),
-      currentIndex: 0,
-      attempts: 0,
-      missesForCurrent: 0,
-      revealed: false,
-      startTime: Date.now(),
-      foundNotes: []
-    };
+    state.attemptsThisStop += 1;
+    state.totalAttempts += 1;
+    showRipple(stage, e.clientX, e.clientY);
 
-    renderHintScreen(playState);
+    const correctZone = zones.find((z) => z.id === stop.zoneId);
+    if (state.attemptsThisStop === 1) {
+      hintBox.textContent = '';
+    } else if (state.attemptsThisStop === 2 && correctZone) {
+      const d = distanceToZoneCenter(point, correctZone);
+      hintBox.textContent = d < 0.15 ? '아주 가까워!' : d < 0.35 ? '조금 더 가까이' : '다른 곳을 찾아볼까?';
+    } else if (state.attemptsThisStop >= 3) {
+      hintBox.textContent = '반짝이는 곳을 눌러봐.';
+      const zoneEl = stage.querySelector(`.zone[data-zone-id="${stop.zoneId}"]`);
+      zoneEl?.classList.add('reveal-hint');
+    }
+  });
+}
+
+function renderStageImage(stage, place) {
+  stage.innerHTML = '';
+  if (!place.image) {
+    const ph = document.createElement('div');
+    ph.className = 'stage-placeholder';
+    ph.textContent = place.name;
+    stage.appendChild(ph);
+    return;
   }
+  const img = document.createElement('img');
+  img.src = place.image;
+  img.alt = place.name;
+  img.draggable = false;
+  img.onerror = () => {
+    stage.innerHTML = '';
+    const ph = document.createElement('div');
+    ph.className = 'stage-placeholder';
+    ph.textContent = place.name;
+    stage.appendChild(ph);
+  };
+  stage.appendChild(img);
+}
 
-  function renderHintScreen(playState) {
-    const note = playState.notes[playState.currentIndex];
-    const place = placeById(playState.room.background);
+function renderZoneOutlines(stage, zones) {
+  zones.forEach((zone) => {
+    const el = document.createElement('div');
+    el.className = 'zone';
+    el.dataset.zoneId = zone.id;
+    el.style.left = `${zone.x * 100}%`;
+    el.style.top = `${zone.y * 100}%`;
+    el.style.width = `${zone.w * 100}%`;
+    el.style.height = `${zone.h * 100}%`;
+    stage.appendChild(el);
+  });
+}
 
-    container.innerHTML = `
-      <h2 class="title">${escapeHtml(playState.room.creator_nickname)}의 방 — ${playState.currentIndex + 1}/${playState.notes.length}번째 쪽지</h2>
-      <div class="play-hint-box card">"${escapeHtml(note.hint)}"</div>
-      <div class="pin-board card" id="play-board" style="cursor:pointer;"></div>
-      <p class="hint" id="play-feedback" style="text-align:center;margin-top:10px;min-height:1.4em;"></p>
-    `;
+function showRipple(stage, clientX, clientY) {
+  const r = stage.getBoundingClientRect();
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple-wrong';
+  ripple.style.left = `${clientX - r.left}px`;
+  ripple.style.top = `${clientY - r.top}px`;
+  stage.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 650);
+}
 
-    const board = container.querySelector('#play-board');
-    loadPlaceBg(board, place);
-    playState.missesForCurrent = 0;
+function onFound(root, places, state, onExit) {
+  const stop = state.trail.stops[state.stopIndex];
+  const isLast = state.stopIndex + 1 >= state.trail.stops.length;
 
-    board.addEventListener('click', (e) => onBoardClick(e, board, playState));
-  }
+  root.innerHTML = `
+    <div class="card" style="text-align:center;">
+      <div style="font-size:3rem;">🍖</div>
+      <p>사료 봉지를 찾았다!</p>
+      <button class="btn" id="open-btn">열어보기</button>
+    </div>
+  `;
 
-  function onBoardClick(e, board, playState) {
-    const note = playState.notes[playState.currentIndex];
-    const rect = board.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-    const targetX = note.x * rect.width;
-    const targetY = note.y * rect.height;
-    const dist = Math.hypot(clickX - targetX, clickY - targetY);
-    const threshold = HIT_RADIUS_RATIO * Math.min(rect.width, rect.height);
-
-    playState.attempts += 1;
-
-    if (dist <= threshold) {
-      onHit(board, playState, note, targetX, targetY);
+  root.querySelector('#open-btn').addEventListener('click', () => {
+    if (isLast) {
+      renderCompletion(root, state, stop, onExit);
     } else {
-      onMiss(board, playState, clickX, clickY, targetX, targetY, rect);
+      renderPlacePicker(root, places, state, stop, onExit);
     }
-  }
+  });
+}
 
-  function onMiss(board, playState, clickX, clickY, targetX, targetY, rect) {
-    const ripple = document.createElement('div');
-    ripple.className = 'ripple-wrong';
-    ripple.style.left = `${clickX}px`;
-    ripple.style.top = `${clickY}px`;
-    board.appendChild(ripple);
-    ripple.addEventListener('animationend', () => ripple.remove());
+function renderPlacePicker(root, places, state, stop, onExit) {
+  root.innerHTML = `
+    <div class="card clue-card">
+      <div class="clue-label">쪽지</div>
+      <div class="clue-text">잘 찾았어! 다음은 — "${escapeHtml(stop.nextClue)}"</div>
+    </div>
+    <div class="place-grid" id="place-grid"></div>
+    <div class="clue-feedback" id="place-feedback"></div>
+    <button class="btn btn-ghost" id="exit-btn" style="display:block; margin:14px auto 0;">그만두기</button>
+  `;
+  root.querySelector('#exit-btn').addEventListener('click', onExit);
 
-    playState.missesForCurrent += 1;
-    const feedback = container.querySelector('#play-feedback');
-    feedback.textContent = '여긴 아니야';
+  const grid = root.querySelector('#place-grid');
+  const feedback = root.querySelector('#place-feedback');
 
-    if (playState.missesForCurrent >= REVEAL_AFTER_MISSES && !board.querySelector('.glow-hint-circle')) {
-      const diameter = 2 * GLOW_RADIUS_RATIO * Math.min(rect.width, rect.height);
-      const glow = document.createElement('div');
-      glow.className = 'glow-hint-circle';
-      glow.style.width = `${diameter}px`;
-      glow.style.height = `${diameter}px`;
-      glow.style.left = `${targetX - diameter / 2}px`;
-      glow.style.top = `${targetY - diameter / 2}px`;
-      board.appendChild(glow);
-      feedback.textContent = '이 근처를 잘 찾아봐 ✨';
-    }
-  }
-
-  function onHit(board, playState, note, targetX, targetY) {
-    board.replaceWith(board.cloneNode(true)); // 클릭 리스너 제거(중복 판정 방지)
-
-    playState.foundNotes.push(note);
-
-    container.querySelector('#play-feedback').textContent = '';
-    const reveal = document.createElement('div');
-    reveal.className = 'card';
-    reveal.style.marginTop = '12px';
-    reveal.innerHTML = `
-      <div class="trace-title" style="font-family:var(--font-title);color:var(--sunset);margin-bottom:6px;">쪽지를 찾았어!</div>
-      <div>${escapeHtml(note.message)}</div>
-      <button class="btn" id="next-hint-btn" style="width:100%;margin-top:14px;">다음</button>
-    `;
-    container.appendChild(reveal);
-
-    reveal.querySelector('#next-hint-btn').addEventListener('click', () => {
-      playState.currentIndex += 1;
-      if (playState.currentIndex >= playState.notes.length) {
-        finishPlay(playState);
+  places.forEach((place) => {
+    const btn = document.createElement('button');
+    btn.className = 'card place-pick';
+    if (place.image) btn.style.backgroundImage = `url("${place.image}")`;
+    btn.innerHTML = `<span class="place-pick-name">${escapeHtml(place.name)}</span>`;
+    btn.addEventListener('click', () => {
+      if (place.id === stop.nextPlaceId) {
+        state.stopIndex += 1;
+        renderClueScreen(root, places, state, onExit);
       } else {
-        renderHintScreen(playState);
+        feedback.textContent = place.miss || '여긴 아니다.';
       }
     });
-  }
+    grid.appendChild(btn);
+  });
+}
 
-  async function finishPlay(playState) {
-    const elapsedSeconds = Math.round((Date.now() - playState.startTime) / 1000);
+function renderCompletion(root, state, lastStop, onExit) {
+  const elapsedSec = Math.round((Date.now() - state.startTime) / 1000);
+  const min = Math.floor(elapsedSec / 60);
+  const sec = elapsedSec % 60;
 
-    container.innerHTML = '<p class="hint">기록을 저장하는 중...</p>';
-
-    const { error } = await savePlay({
-      room_id: playState.room.id,
-      nickname: identity.nickname,
-      elapsed_seconds: elapsedSeconds,
-      attempts: playState.attempts
-    });
-    if (error) {
-      showToast('클리어 기록 저장에 실패했어. 결과는 볼 수 있어.', 'error');
-    }
-
-    const { data: leaderboard } = await getRoomLeaderboard(playState.room.id, 10);
-
-    const foundHtml = playState.foundNotes.map((n, i) => `
-      <div class="card pin-list-item">
-        <div class="pin-no">${i + 1}</div>
-        <div class="pin-text">${escapeHtml(n.message)}</div>
+  root.innerHTML = `
+    <div class="card trail-done-card">
+      <h2 class="title">🐈 완주했다!</h2>
+      <div class="trail-stat-row">
+        <span>⏱ ${min}분 ${sec}초</span>
+        <span>🎯 시도 ${state.totalAttempts + state.trail.stops.length}회</span>
       </div>
-    `).join('');
-
-    const boardHtml = (leaderboard && leaderboard.length)
-      ? leaderboard.map((p, i) => `
-          <div class="rank-row ${p.nickname === identity.nickname ? 'me' : ''}">
-            <div class="rank-no">${i + 1}</div>
-            <div class="rank-nick">${escapeHtml(p.nickname)}</div>
-            <div class="rank-score">${p.elapsed_seconds}초</div>
-          </div>
-        `).join('')
-      : '<p class="hint">아직 기록이 없어.</p>';
-
-    container.innerHTML = `
-      <h2 class="title">🎉 클리어!</h2>
-      <div class="card" style="text-align:center;margin-bottom:14px;">
-        <div>걸린 시간: <strong>${elapsedSeconds}초</strong></div>
-        <div>시도 횟수: <strong>${playState.attempts}회</strong></div>
+      <div class="lastword">"${escapeHtml(lastStop.lastWord || '')}"</div>
+      <p style="margin-top:14px; color:var(--cat); font-size:.9rem;">${escapeHtml(state.trail.creator || '누군가')}가 만든 사료 길이었어.</p>
+      <div class="row-btns" style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
+        <button class="btn" id="create-btn">🐈 나도 사료 숨기기</button>
+        <button class="btn btn-ghost" id="exit-btn2">메인으로</button>
       </div>
-      <h3>찾은 쪽지 다시 보기</h3>
-      ${foundHtml}
-      <h3 style="margin-top:16px;">이 방 기록판 (빠른 순 10명)</h3>
-      ${boardHtml}
-      <button class="btn" id="other-room-btn" style="width:100%;margin-top:16px;">다른 방 가기</button>
-    `;
-
-    container.querySelector('#other-room-btn').addEventListener('click', () => renderSchoolEntry());
-  }
+    </div>
+  `;
+  root.querySelector('#exit-btn2').addEventListener('click', onExit);
+  root.querySelector('#create-btn').addEventListener('click', async () => {
+    const { initCreate } = await import('./hide-create.js');
+    initCreate(root, { onExit });
+  });
 }

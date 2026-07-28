@@ -1,0 +1,21 @@
+{
+  "trailId": "TEST01",
+  "title": "우리 반 고양이를 위한 사료 찾기",
+  "creator": "하늘",
+  "createdAt": "2026-07-28T09:00:00Z",
+  "stops": [
+    { "order": 1, "placeId": "classroom", "zoneId": "desk",
+      "objectClue": "하루 종일 아이들의 팔꿈치를 받아주는 네모난 섬",
+      "nextClue":   "소리가 두 번 들리는 커다란 동굴",
+      "nextPlaceId": "gym" },
+
+    { "order": 2, "placeId": "gym", "zoneId": "mat",
+      "objectClue": "넘어져도 아프지 않게 누워 있는 두꺼운 이불 같은 것",
+      "nextClue":   "소리를 내면 안 되는 종이 숲",
+      "nextPlaceId": "library" },
+
+    { "order": 3, "placeId": "library", "zoneId": "shelf",
+      "objectClue": "말없이 서서 수천 개의 이야기를 안고 있는 나무 벽처럼 생긴 곳",
+      "lastWord":   "방학 동안 잘 지내. 개학하면 내가 제일 먼저 올게." }
+  ]
+}

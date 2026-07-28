@@ -3,45 +3,118 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>쪽지 숨기기</title>
+<title>사료 숨기기 / 사료 찾기</title>
 <link rel="stylesheet" href="css/base.css" />
 <link rel="stylesheet" href="css/hide.css" />
 </head>
 <body>
   <div class="app">
-    <div class="nick-header" id="nick-header"></div>
-    <h1 class="title hide-title">📮 쪽지 숨기기</h1>
-    <p class="hide-sub">비유 힌트로 쪽지를 숨기거나, 친구가 숨긴 쪽지를 찾아보자</p>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <a href="index.html" class="btn btn-ghost" style="flex:none; min-height:36px; padding:6px 14px; font-size:.9rem;" title="메인 화면으로">🏠 메인</a>
+      <div class="nick-header" id="nick-header" style="flex:1; justify-content:flex-end;"></div>
+    </div>
+    <h1 class="title hide-title">🐈 사료 숨기기 / 사료 찾기</h1>
+    <p class="hide-sub">방학 동안 학교 고양이가 굶지 않게, 사료를 나눠 숨기고 쪽지를 남겨보자</p>
     <div id="hide-root"></div>
   </div>
 
   <script type="module">
-    import { ensureIdentity, mountNickHeader } from './js/common.js';
+    import { ensureIdentity, mountNickHeader, escapeHtml } from './js/common.js';
+    import { decodeTrail } from './js/hide-core.js';
 
+    const MY_TRAILS_KEY = 'myTrails';
     const root = document.getElementById('hide-root');
+    let identity = null;
+
+    function getMyTrails() {
+      try {
+        const raw = localStorage.getItem(MY_TRAILS_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
 
     function renderEntry() {
+      const myTrails = getMyTrails();
+      const listHtml = myTrails.length
+        ? myTrails.slice().reverse().map((t, i) => {
+            const idx = myTrails.length - 1 - i;
+            return `
+              <div class="card trail-list-item">
+                <div>
+                  <div class="trail-title">${escapeHtml(t.title)}</div>
+                  <div class="trail-meta">${t.stops.length}개 정거장 · ${new Date(t.createdAt).toLocaleDateString()}</div>
+                </div>
+                <button class="btn btn-ghost" data-idx="${idx}" style="min-height:40px;">열어보기</button>
+              </div>`;
+          }).join('')
+        : '<p class="hide-sub" style="margin:8px 0;">아직 만든 게 없어.</p>';
+
       root.innerHTML = `
         <div class="hide-entry">
           <button class="card hide-entry-card" id="btn-create">
-            <div class="icon">🖊</div>
+            <div class="icon">🐈</div>
             <div>
-              <div class="label">내가 쪽지 숨기러 가기</div>
-              <div class="desc">장소를 고르고 비유 힌트로 쪽지를 숨겨보자 (방 만들기)</div>
+              <div class="label">사료 숨기기 (문제내기)</div>
+              <div class="desc">장소를 골라 순서를 잇고, 비유 힌트로 사료 길을 만들어보자</div>
             </div>
           </button>
           <button class="card hide-entry-card" id="btn-play">
             <div class="icon">🔍</div>
             <div>
-              <div class="label">친구가 숨긴 쪽지 찾으러 가기</div>
-              <div class="desc">학교 코드로 입장해서 쪽지를 찾아보자</div>
+              <div class="label">사료 찾기</div>
+              <div class="desc">친구가 보내준 링크를 붙여넣어 사료를 찾으러 가자</div>
             </div>
           </button>
         </div>
-        <a class="btn btn-ghost" style="display:block;text-align:center;margin-top:14px;" href="index.html">메인으로</a>
+        <div class="hide-my-trails">
+          <h3>내가 숨긴 사료</h3>
+          ${listHtml}
+        </div>
       `;
       root.querySelector('#btn-create').addEventListener('click', startCreate);
-      root.querySelector('#btn-play').addEventListener('click', () => startPlay(null));
+      root.querySelector('#btn-play').addEventListener('click', renderPasteLink);
+      root.querySelectorAll('.trail-list-item button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const trail = myTrails[Number(btn.dataset.idx)];
+          startPlay(trail);
+        });
+      });
+    }
+
+    function extractEncoded(input) {
+      const v = input.trim();
+      const hashIdx = v.indexOf('#trail=');
+      if (hashIdx !== -1) return v.slice(hashIdx + '#trail='.length);
+      return v;
+    }
+
+    function renderPasteLink() {
+      root.innerHTML = `
+        <div class="card">
+          <p>친구가 보내준 사료 찾기 링크를 붙여넣어줘.</p>
+          <div class="field">
+            <textarea id="link-input" rows="3" placeholder="https://.../hide.html#trail=...."></textarea>
+          </div>
+          <div class="clue-feedback" id="link-feedback"></div>
+          <div class="row-btns" style="display:flex; gap:10px; margin-top:10px;">
+            <button class="btn" id="link-go">찾으러 가기</button>
+            <button class="btn btn-ghost" id="link-cancel">뒤로</button>
+          </div>
+        </div>
+      `;
+      root.querySelector('#link-cancel').addEventListener('click', renderEntry);
+      root.querySelector('#link-go').addEventListener('click', () => {
+        const raw = root.querySelector('#link-input').value;
+        const trail = decodeTrail(extractEncoded(raw));
+        const feedback = root.querySelector('#link-feedback');
+        if (!trail || !Array.isArray(trail.stops) || !trail.stops.length) {
+          feedback.textContent = '링크를 다시 확인해줘.';
+          return;
+        }
+        startPlay(trail);
+      });
     }
 
     async function startCreate() {
@@ -49,24 +122,40 @@
       initCreate(root, { identity, onExit: renderEntry });
     }
 
-    async function startPlay(roomCode) {
+    async function startPlay(trail) {
       const { initPlay } = await import('./js/hide-play.js');
-      initPlay(root, { identity, roomCode, onExit: renderEntry });
+      initPlay(root, { identity, trail, onExit: renderEntry });
     }
 
-    let identity = null;
+    async function startEditTool() {
+      const { initEditTool } = await import('./js/hide-create.js');
+      initEditTool(root);
+    }
 
     (async () => {
+      const params = new URLSearchParams(location.search);
+
+      if (params.get('edit') === '1') {
+        // 좌표 도구는 로그인/닉네임 없이도 바로 켜지는 개발용 화면이다.
+        document.querySelector('.hide-title').hidden = true;
+        document.querySelector('.hide-sub').hidden = true;
+        startEditTool();
+        return;
+      }
+
       identity = await ensureIdentity();
       mountNickHeader(document.getElementById('nick-header'));
 
-      const params = new URLSearchParams(location.search);
-      const roomParam = params.get('room');
-      if (roomParam) {
-        startPlay(roomParam);
-      } else {
-        renderEntry();
+      const hash = location.hash;
+      if (hash.startsWith('#trail=')) {
+        const trail = decodeTrail(hash.slice('#trail='.length));
+        if (trail && Array.isArray(trail.stops) && trail.stops.length) {
+          startPlay(trail);
+          return;
+        }
       }
+
+      renderEntry();
     })();
   </script>
 </body>
