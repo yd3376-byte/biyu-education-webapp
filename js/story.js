@@ -142,6 +142,12 @@ async function init() {
     return;
   }
 
+  // 이 기분 문제가 추가되기 전에 이미 끝까지 진행해 'done'으로 저장된 사람도
+  // 한 번은 이 문제를 볼 수 있게 되돌린다.
+  if (progress.phase === 'done' && !progress.endingSentence) {
+    progress.phase = 'ending';
+  }
+
   updateClock();
   updateNotebookBadge();
   render();
