@@ -5,12 +5,20 @@ import { toRatio, validateClue, encodeTrail } from './hide-core.js';
 
 const DRAFT_KEY = 'draftTrail';
 const MY_TRAILS_KEY = 'myTrails';
+const MAP_IMAGE = 'assets/img/map.png';
+const MAP_ASPECT = 1.25;
 
 let placesIndex = null;
+let mapHotspots = null;
 
 async function loadPlacesIndex() {
   if (!placesIndex) placesIndex = await loadJson('data/places/index.json');
   return placesIndex;
+}
+
+async function loadMapHotspots() {
+  if (!mapHotspots) mapHotspots = await loadJson('data/places/map-hotspots.json');
+  return mapHotspots;
 }
 
 async function loadZones(placeId) {
@@ -130,15 +138,19 @@ function renderModeSelect(root, places, identity, onExit) {
 
 /* ---------------- 길 짜기 (장소 순서 선택) ---------------- */
 
-function renderRoutePicker(root, places, identity, onExit, draft) {
+async function renderRoutePicker(root, places, identity, onExit, draft) {
+  const hotspots = await loadMapHotspots();
   root.innerHTML = `
     <div class="card">
-      <p>사료를 숨길 장소를 순서대로 ${draft.routeCount}곳 골라줘.</p>
+      <p>지도에서 사료를 숨길 장소를 순서대로 ${draft.routeCount}곳 골라줘.</p>
       <div class="route-summary" id="route-summary"></div>
     </div>
-    <div class="place-grid" id="route-grid"></div>
+    <div class="stage-wrap">
+      <div class="stage" id="map-stage" style="aspect-ratio:${MAP_ASPECT};"></div>
+    </div>
   `;
-  const grid = root.querySelector('#route-grid');
+  const stage = root.querySelector('#map-stage');
+  renderStageImage(stage, { image: MAP_IMAGE, name: '학교 지도' });
   const summary = root.querySelector('#route-summary');
 
   function renderSummary() {
@@ -148,21 +160,25 @@ function renderRoutePicker(root, places, identity, onExit, draft) {
   }
   renderSummary();
 
-  places.forEach((place) => {
-    const btn = document.createElement('button');
-    btn.className = 'card place-pick';
-    if (place.image) btn.style.backgroundImage = `url("${place.image}")`;
-    btn.innerHTML = `<span class="place-pick-name">${escapeHtml(place.name)}</span>`;
-    grid.appendChild(btn);
+  hotspots.forEach((h) => {
+    const el = document.createElement('div');
+    el.className = 'zone';
+    el.dataset.hotspotId = h.id;
+    el.style.left = `${h.x * 100}%`;
+    el.style.top = `${h.y * 100}%`;
+    el.style.width = `${h.w * 100}%`;
+    el.style.height = `${h.h * 100}%`;
+    el.innerHTML = `<span class="zone-label">${escapeHtml(h.name)}</span>`;
+    stage.appendChild(el);
 
-    btn.addEventListener('click', () => {
-      if (draft.route.includes(place.id)) return;
-      draft.route.push(place.id);
+    el.addEventListener('click', () => {
+      if (draft.route.includes(h.id)) return;
+      draft.route.push(h.id);
+      el.classList.add('picked');
       const order = document.createElement('div');
       order.className = 'place-pick-order';
       order.textContent = String(draft.route.length);
-      btn.appendChild(order);
-      btn.classList.add('selected');
+      el.appendChild(order);
       saveDraft(draft);
       renderSummary();
 
