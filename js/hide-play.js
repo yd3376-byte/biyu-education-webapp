@@ -151,8 +151,8 @@ function onFound(root, places, state, onExit) {
 
   root.innerHTML = `
     <div class="card" style="text-align:center;">
-      <div style="font-size:3rem;">🍖</div>
-      <p>사료 봉지를 찾았다!</p>
+      <div class="found-sprite" style="font-size:4.5rem;">🥣</div>
+      <h2 class="title" style="margin-top:8px;">사료를 찾았다!</h2>
       <button class="btn" id="open-btn">열어보기</button>
     </div>
   `;

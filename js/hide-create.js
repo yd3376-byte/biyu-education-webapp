@@ -118,7 +118,7 @@ function renderModeSelect(root, places, identity, onExit) {
   root.innerHTML = `
     <div class="card">
       <p>방학이 시작됐어. 학교 고양이가 굶지 않게 사료를 나눠 숨기고, 어디 있는지 쪽지에 남겨 줘.<br>단, 다른 사람이 함부로 가져가지 못하게 빗대어 써야 해.</p>
-      <div class="field-label" style="font-family:var(--font-title); margin:14px 0 8px;">몇 곳을 이을까?</div>
+      <div class="field-label" style="font-family:var(--font-title); margin:14px 0 8px;">몇 곳에 숨길까?</div>
       <div class="row-btns" id="mode-btns" style="display:flex; gap:10px;">
         <button class="btn btn-ghost" data-count="2">짧게 (2곳)</button>
         <button class="btn" data-count="3">기본 (3곳)</button>
@@ -273,7 +273,7 @@ function renderClueForm(root, places, identity, onExit, draft, placeId, place, z
     const nextPlace = placeById(places, nextPlaceId);
     root.innerHTML = `
       <div class="card">
-        <p>다음은 <strong>${escapeHtml(nextPlace.name)}</strong>이야. 이 장소를 비유로 설명해줘.</p>
+        <p>다음으로 숨길 곳은 <strong>${escapeHtml(nextPlace.name)}</strong>인데, 친구가 ${escapeHtml(nextPlace.name)}에 숨긴 걸 찾을 수 있게 ${escapeHtml(nextPlace.name)}에 대한 힌트를 비유로 써줘.</p>
         <div class="clue-input-box">
           <textarea id="clue-input" maxlength="80" placeholder="예: 소리가 두 번 들리는 커다란 동굴"></textarea>
         </div>
@@ -340,7 +340,7 @@ function renderTitleStep(root, identity, onExit, draft) {
   root.innerHTML = `
     <div class="card">
       <h2 class="title">거의 다 됐어!</h2>
-      <p>이 사료 길에 이름을 붙여줘.</p>
+      <p>사료가 숨겨진 장소를 찾아 떠나는 친구들이 볼 수 있도록, 여러분만의 멋진 이름을 지어 주세요.</p>
       <div class="field">
         <input id="title-input" maxlength="30" placeholder="예: 우리 반 고양이를 위한 사료 찾기" />
       </div>

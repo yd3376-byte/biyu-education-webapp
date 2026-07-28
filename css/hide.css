@@ -3,6 +3,12 @@
 .hide-title { text-align: center; margin: 12px 0 4px; }
 .hide-sub { text-align: center; color: var(--cat); margin-bottom: 20px; }
 
+.found-sprite { animation: found-pop .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes found-pop {
+  0% { transform: scale(.2); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .hide-entry {
   display: flex;
   flex-direction: column;

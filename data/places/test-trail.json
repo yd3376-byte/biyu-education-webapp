@@ -4,7 +4,7 @@
   "creator": "하늘",
   "createdAt": "2026-07-28T09:00:00Z",
   "stops": [
-    { "order": 1, "placeId": "classroom", "zoneId": "desk",
+    { "order": 1, "placeId": "classroom", "zoneId": "desk1",
       "objectClue": "하루 종일 아이들의 팔꿈치를 받아주는 네모난 섬",
       "nextClue":   "소리가 두 번 들리는 커다란 동굴",
       "nextPlaceId": "gym" },
