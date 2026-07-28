@@ -189,6 +189,37 @@ a { color: inherit; }
   z-index: 900;
   padding: 16px;
 }
+.role-choice-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.role-choice-btn { min-height: 52px; font-size: 1.05rem; }
+
+.teacher-code-display {
+  text-align: center;
+  font-family: var(--font-title);
+  font-size: 2rem;
+  letter-spacing: .12em;
+  background: #FBF3E5;
+  border-radius: calc(var(--radius) / 2);
+  padding: 14px 10px;
+}
+
+.modal-back-link {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: none;
+  border: none;
+  color: var(--cat);
+  font-size: .85rem;
+  margin-top: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .modal {
   background: #fff;
   border-radius: var(--radius);

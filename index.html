@@ -110,15 +110,20 @@
 
     <div class="hub-footer">
       <a href="names.html">우리 반이 지어준 이름들 →</a>
+      <div id="teacher-link-slot"></div>
     </div>
   </div>
 
   <script type="module">
-    import { ensureIdentity, mountNickHeader } from './js/common.js';
+    import { ensureIdentity, mountNickHeader, getRole } from './js/common.js';
 
     (async () => {
       await ensureIdentity();
       mountNickHeader(document.getElementById('nick-header'));
+      if (getRole() === 'teacher') {
+        document.getElementById('teacher-link-slot').innerHTML =
+          '<a href="teacher.html" style="display:block; margin-top:8px;">🧑‍🏫 교사 페이지로 가기 →</a>';
+      }
     })();
   </script>
 </body>

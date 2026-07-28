@@ -4,6 +4,7 @@ import { BANNED_WORDS } from './metaphor.js';
 
 const NICK_KEY = 'ba_nickname';
 const SCHOOL_KEY = 'ba_school_code';
+const ROLE_KEY = 'ba_role';
 
 /* ---------------- 닉네임 / 학교 코드 ---------------- */
 
@@ -19,9 +20,21 @@ export function hasIdentity() {
   return !!(getNickname() && getSchoolCode());
 }
 
-export function setIdentity(nickname, schoolCode) {
+export function getRole() {
+  return localStorage.getItem(ROLE_KEY) || '';
+}
+
+export function setIdentity(nickname, schoolCode, role = getRole() || 'student') {
   localStorage.setItem(NICK_KEY, nickname);
   localStorage.setItem(SCHOOL_KEY, schoolCode.toUpperCase());
+  localStorage.setItem(ROLE_KEY, role);
+}
+
+function generateSchoolCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 혼동되는 0/O, 1/I 제외
+  let code = '';
+  for (let i = 0; i < 6; i += 1) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
 }
 
 export function validateNickname(v) {
@@ -63,40 +76,95 @@ export function ensureIdentity() {
 function openIdentityModal(onDone) {
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
-  backdrop.innerHTML = `
-    <div class="modal">
-      <h2 class="title">닉네임과 학교 코드를 알려줘</h2>
-      <div class="field">
-        <label for="ident-nick">닉네임 (2~10자)</label>
-        <input id="ident-nick" type="text" maxlength="10" placeholder="예: 하늘" />
-        <div class="error" id="ident-nick-err"></div>
-      </div>
-      <div class="field">
-        <label for="ident-school">학교 코드 (영문/숫자 4~8자)</label>
-        <input id="ident-school" type="text" maxlength="8" placeholder="예: HANSOL5" />
-        <div class="error" id="ident-school-err"></div>
-      </div>
-      <button class="btn" id="ident-submit" style="width:100%">시작하기</button>
-    </div>
-  `;
   document.body.appendChild(backdrop);
 
-  const nickInput = backdrop.querySelector('#ident-nick');
-  const schoolInput = backdrop.querySelector('#ident-school');
-  const nickErr = backdrop.querySelector('#ident-nick-err');
-  const schoolErr = backdrop.querySelector('#ident-school-err');
-
-  backdrop.querySelector('#ident-submit').addEventListener('click', () => {
-    const nickResult = validateNickname(nickInput.value);
-    const schoolResult = validateSchoolCode(schoolInput.value);
-    nickErr.textContent = nickResult.ok ? '' : nickResult.message;
-    schoolErr.textContent = schoolResult.ok ? '' : schoolResult.message;
-    if (!nickResult.ok || !schoolResult.ok) return;
-
-    setIdentity(nickInput.value.trim(), schoolInput.value.trim());
+  function finish(nickname, schoolCode, role) {
+    setIdentity(nickname, schoolCode, role);
     document.body.removeChild(backdrop);
     onDone({ nickname: getNickname(), schoolCode: getSchoolCode() });
-  });
+  }
+
+  function renderRoleChoice() {
+    backdrop.innerHTML = `
+      <div class="modal">
+        <h2 class="title">선생님이신가요, 학생인가요?</h2>
+        <div class="role-choice-row">
+          <button class="btn role-choice-btn" id="role-teacher">🧑‍🏫 선생님</button>
+          <button class="btn btn-ghost role-choice-btn" id="role-student">🧑‍🎓 학생</button>
+        </div>
+      </div>
+    `;
+    backdrop.querySelector('#role-teacher').addEventListener('click', renderTeacherForm);
+    backdrop.querySelector('#role-student').addEventListener('click', renderStudentForm);
+  }
+
+  function renderStudentForm() {
+    backdrop.innerHTML = `
+      <div class="modal">
+        <h2 class="title">닉네임과 학교 코드를 알려줘</h2>
+        <div class="field">
+          <label for="ident-nick">닉네임 (2~10자)</label>
+          <input id="ident-nick" type="text" maxlength="10" placeholder="예: 하늘" value="${escapeHtml(getNickname())}" />
+          <div class="error" id="ident-nick-err"></div>
+        </div>
+        <div class="field">
+          <label for="ident-school">학교 코드 (선생님이 알려준 코드)</label>
+          <input id="ident-school" type="text" maxlength="8" placeholder="예: HANSOL5" value="${escapeHtml(getSchoolCode())}" />
+          <div class="error" id="ident-school-err"></div>
+        </div>
+        <button class="btn" id="ident-submit" style="width:100%">시작하기</button>
+        <button class="modal-back-link" id="ident-back">← 다시 선택</button>
+      </div>
+    `;
+    const nickInput = backdrop.querySelector('#ident-nick');
+    const schoolInput = backdrop.querySelector('#ident-school');
+
+    backdrop.querySelector('#ident-back').addEventListener('click', renderRoleChoice);
+    backdrop.querySelector('#ident-submit').addEventListener('click', () => {
+      const nickResult = validateNickname(nickInput.value);
+      const schoolResult = validateSchoolCode(schoolInput.value);
+      backdrop.querySelector('#ident-nick-err').textContent = nickResult.ok ? '' : nickResult.message;
+      backdrop.querySelector('#ident-school-err').textContent = schoolResult.ok ? '' : schoolResult.message;
+      if (!nickResult.ok || !schoolResult.ok) return;
+      finish(nickInput.value.trim(), schoolInput.value.trim(), 'student');
+    });
+  }
+
+  function renderTeacherForm() {
+    let code = getSchoolCode() || generateSchoolCode();
+    backdrop.innerHTML = `
+      <div class="modal">
+        <h2 class="title">우리 반 코드를 만들었어요</h2>
+        <p class="field-hint" style="margin-bottom:10px;">이 코드를 학생들에게 알려주세요. 학생들은 이 코드로 들어와요.</p>
+        <div class="teacher-code-display" id="code-display">${escapeHtml(code)}</div>
+        <button class="btn btn-ghost" id="regen-btn" style="width:100%; margin:10px 0 16px;">다른 코드 만들기</button>
+        <div class="field">
+          <label for="ident-teacher-nick">선생님 닉네임 (2~10자)</label>
+          <input id="ident-teacher-nick" type="text" maxlength="10" value="${escapeHtml(getNickname() || '선생님')}" />
+          <div class="error" id="ident-teacher-nick-err"></div>
+        </div>
+        <button class="btn" id="ident-teacher-submit" style="width:100%">시작하기</button>
+        <button class="modal-back-link" id="ident-teacher-back">← 다시 선택</button>
+      </div>
+    `;
+    backdrop.querySelector('#ident-teacher-back').addEventListener('click', renderRoleChoice);
+    backdrop.querySelector('#regen-btn').addEventListener('click', () => {
+      code = generateSchoolCode();
+      backdrop.querySelector('#code-display').textContent = code;
+    });
+    backdrop.querySelector('#ident-teacher-submit').addEventListener('click', () => {
+      const nickInput = backdrop.querySelector('#ident-teacher-nick');
+      const nickResult = validateNickname(nickInput.value);
+      backdrop.querySelector('#ident-teacher-nick-err').textContent = nickResult.ok ? '' : nickResult.message;
+      if (!nickResult.ok) return;
+      finish(nickInput.value.trim(), code, 'teacher');
+    });
+  }
+
+  const startRole = getRole();
+  if (startRole === 'teacher') renderTeacherForm();
+  else if (startRole === 'student') renderStudentForm();
+  else renderRoleChoice();
 }
 
 /**
