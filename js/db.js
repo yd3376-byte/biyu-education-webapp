@@ -177,6 +177,27 @@ export async function savePracticeSession({ nickname, school_code, mode, total_s
   return { data: session, error: null };
 }
 
+/* ---------------- 사료 숨기기 / 사료 찾기 (버튼3, 학교코드 공유) ---------------- */
+
+export function saveHideTrail({ school_code, creator, title, route_count, stops }) {
+  return wrap(
+    supabase.from('hide_trails').insert({
+      school_code, creator, title, route_count, stops
+    }).select().single()
+  );
+}
+
+export function getHideTrailsBySchool(school_code) {
+  return wrap(
+    supabase
+      .from('hide_trails')
+      .select('*')
+      .eq('school_code', school_code)
+      .order('created_at', { ascending: false })
+      .limit(100)
+  );
+}
+
 export async function getPracticeRankings({ school_code = null, limit = 20 } = {}) {
   let query = supabase
     .from('practice_sessions')

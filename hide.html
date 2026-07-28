@@ -8,10 +8,14 @@
 <link rel="stylesheet" href="css/hide.css" />
 </head>
 <body>
+  <audio id="bgm3" src="assets/audio/bgm3.mp3" loop preload="auto"></audio>
   <div class="app">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
       <a href="index.html" class="btn btn-ghost" style="flex:none; min-height:36px; padding:6px 14px; font-size:.9rem;" title="메인 화면으로">🏠 메인</a>
-      <div class="nick-header" id="nick-header" style="flex:1; justify-content:flex-end;"></div>
+      <div style="display:flex; align-items:center; gap:8px; flex:1; justify-content:flex-end;">
+        <button class="btn btn-ghost" id="bgm-toggle" style="flex:none; min-height:36px; padding:6px 10px; font-size:.9rem;" title="배경음악 켜기/끄기">🔊</button>
+        <div class="nick-header" id="nick-header"></div>
+      </div>
     </div>
     <h1 class="title hide-title">🐈 사료 숨기기 / 사료 찾기</h1>
     <p class="hide-sub">방학 동안 학교 고양이가 굶지 않게, 사료를 나눠 숨기고 쪽지를 남겨보자</p>
@@ -19,8 +23,31 @@
   </div>
 
   <script type="module">
-    import { ensureIdentity, mountNickHeader, escapeHtml } from './js/common.js';
+    import { ensureIdentity, mountNickHeader, showToast, escapeHtml } from './js/common.js';
     import { decodeTrail } from './js/hide-core.js';
+    import { getHideTrailsBySchool } from './js/db.js';
+
+    const bgm3 = document.getElementById('bgm3');
+    const BGM_KEY = 'ba_bgm_muted';
+    let bgmMuted = localStorage.getItem(BGM_KEY) === '1';
+    const bgmToggleBtn = document.getElementById('bgm-toggle');
+    bgmToggleBtn.textContent = bgmMuted ? '🔇' : '🔊';
+    bgm3.volume = 0.35;
+
+    function playBgm() {
+      if (bgmMuted) return;
+      bgm3.play().catch(() => {
+        document.addEventListener('click', () => { if (!bgmMuted) bgm3.play().catch(() => {}); }, { once: true });
+      });
+    }
+    bgmToggleBtn.addEventListener('click', () => {
+      bgmMuted = !bgmMuted;
+      localStorage.setItem(BGM_KEY, bgmMuted ? '1' : '0');
+      bgmToggleBtn.textContent = bgmMuted ? '🔇' : '🔊';
+      if (bgmMuted) bgm3.pause();
+      else playBgm();
+    });
+    playBgm();
 
     const MY_TRAILS_KEY = 'myTrails';
     const root = document.getElementById('hide-root');
@@ -64,7 +91,7 @@
             <div class="icon">🔍</div>
             <div>
               <div class="label">사료 찾기</div>
-              <div class="desc">친구가 보내준 링크를 붙여넣어 사료를 찾으러 가자</div>
+              <div class="desc">같은 학교 코드 친구들이 숨긴 사료 길을 바로 찾으러 가자</div>
             </div>
           </button>
         </div>
@@ -74,11 +101,65 @@
         </div>
       `;
       root.querySelector('#btn-create').addEventListener('click', startCreate);
-      root.querySelector('#btn-play').addEventListener('click', renderPasteLink);
+      root.querySelector('#btn-play').addEventListener('click', renderFindList);
       root.querySelectorAll('.trail-list-item button').forEach((btn) => {
         btn.addEventListener('click', () => {
           const trail = myTrails[Number(btn.dataset.idx)];
           startPlay(trail);
+        });
+      });
+    }
+
+    function trailFromRow(row) {
+      return {
+        trailId: row.id,
+        title: row.title,
+        creator: row.creator,
+        createdAt: row.created_at,
+        stops: row.stops
+      };
+    }
+
+    async function renderFindList() {
+      root.innerHTML = `
+        <div class="card" style="text-align:center;">우리 학교 친구들이 숨긴 사료 길을 불러오는 중...</div>
+      `;
+      const { data, error } = await getHideTrailsBySchool(identity.schoolCode);
+
+      if (error) {
+        showToast('목록을 불러오는 데 실패했어. 링크가 있다면 붙여넣어줘.', 'error');
+        renderPasteLink();
+        return;
+      }
+
+      const trails = (data || []).filter((row) => Array.isArray(row.stops) && row.stops.length);
+      const listHtml = trails.length
+        ? trails.map((row) => `
+            <div class="card trail-list-item">
+              <div>
+                <div class="trail-title">${escapeHtml(row.title)}</div>
+                <div class="trail-meta">${escapeHtml(row.creator || '누군가')} · ${row.route_count}개 정거장 · ${new Date(row.created_at).toLocaleDateString()}</div>
+              </div>
+              <button class="btn btn-ghost" data-id="${escapeHtml(row.id)}" style="min-height:40px;">찾으러 가기</button>
+            </div>`).join('')
+        : '<p class="hide-sub" style="margin:8px 0;">아직 같은 학교 코드로 만들어진 사료 길이 없어. 친구에게 먼저 만들어보라고 해봐!</p>';
+
+      root.innerHTML = `
+        <div class="card" style="margin-bottom:14px;">
+          <p>우리 학교(${escapeHtml(identity.schoolCode)}) 친구들이 만든 사료 길이야. 이름을 눌러 바로 찾으러 가자.</p>
+        </div>
+        ${listHtml}
+        <div class="row-btns" style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+          <button class="btn btn-ghost" id="link-fallback-btn">링크로 찾기 (다른 학교 친구 등)</button>
+          <button class="btn btn-ghost" id="find-back-btn">뒤로</button>
+        </div>
+      `;
+      root.querySelector('#find-back-btn').addEventListener('click', renderEntry);
+      root.querySelector('#link-fallback-btn').addEventListener('click', renderPasteLink);
+      root.querySelectorAll('.trail-list-item button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const row = trails.find((r) => String(r.id) === btn.dataset.id);
+          if (row) startPlay(trailFromRow(row));
         });
       });
     }
@@ -104,7 +185,7 @@
           </div>
         </div>
       `;
-      root.querySelector('#link-cancel').addEventListener('click', renderEntry);
+      root.querySelector('#link-cancel').addEventListener('click', renderFindList);
       root.querySelector('#link-go').addEventListener('click', () => {
         const raw = root.querySelector('#link-input').value;
         const trail = decodeTrail(extractEncoded(raw));

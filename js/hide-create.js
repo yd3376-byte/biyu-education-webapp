@@ -1,7 +1,9 @@
-// 사료 숨기기(문제내기). js/db.js/Supabase는 전혀 참조하지 않는다 (MVP).
+// 사료 숨기기(문제내기). 완성한 길은 로컬(내 기기)에도 남기고,
+// 같은 학교 코드 친구들이 "사료 찾기"에서 바로 볼 수 있도록 Supabase(hide_trails)에도 저장한다.
 
 import { ensureIdentity, loadJson, showToast, escapeHtml } from './common.js';
 import { toRatio, validateClue, encodeTrail } from './hide-core.js';
+import { saveHideTrail } from './db.js';
 
 const DRAFT_KEY = 'draftTrail';
 const MY_TRAILS_KEY = 'myTrails';
@@ -372,13 +374,25 @@ function finishTrail(root, identity, onExit, draft, title) {
   localStorage.setItem(MY_TRAILS_KEY, JSON.stringify(myTrails));
   clearDraft();
 
+  if (identity?.schoolCode) {
+    saveHideTrail({
+      school_code: identity.schoolCode,
+      creator: trail.creator,
+      title: trail.title,
+      route_count: draft.routeCount,
+      stops: trail.stops
+    }).then(({ error }) => {
+      if (error) showToast('같은 학교 친구들과 공유하는 데 실패했어. (내 기기에는 저장됐어)', 'error');
+    });
+  }
+
   const encoded = encodeTrail(trail);
   const url = `${location.origin}${location.pathname}#trail=${encoded}`;
 
   root.innerHTML = `
     <div class="card trail-done-card">
       <h2 class="title">🎉 완성했어!</h2>
-      <p>이 링크를 친구에게 보내주면 바로 사료를 찾을 수 있어.</p>
+      <p>같은 학교 코드 친구들이 "사료 찾기"에서 이 길을 바로 볼 수 있어. 링크로 보내주고 싶다면 아래 링크를 복사해도 돼.</p>
       <div class="share-link-row">
         <input id="share-link" readonly value="${escapeHtml(url)}" />
         <button class="btn" id="copy-btn">복사</button>
