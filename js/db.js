@@ -154,10 +154,10 @@ export function getRoomLeaderboard(room_id, limit = 10) {
 
 /* ---------------- 비유 표현 연습하기 (practice 2.0) ---------------- */
 
-export async function savePracticeSession({ nickname, school_code, mode, total_score, max_score, best_answer, answers }) {
+export async function savePracticeSession({ nickname, school_code, mode, total_score, max_score, best_answer, answers, public_ranking = false }) {
   const { data: session, error: sessionError } = await wrap(
     supabase.from('practice_sessions').insert({
-      nickname, school_code, mode, total_score, max_score, best_answer
+      nickname, school_code, mode, total_score, max_score, best_answer, public_ranking
     }).select().single()
   );
   if (sessionError) return { data: null, error: sessionError };
@@ -175,6 +175,19 @@ export async function savePracticeSession({ nickname, school_code, mode, total_s
   }
 
   return { data: session, error: null };
+}
+
+/* ---------------- 비유 표현 도전하기 — 교사 검토 ---------------- */
+
+export function getTeacherPracticeSessions(school_code) {
+  return wrap(
+    supabase
+      .from('practice_sessions')
+      .select('*, practice_answers(*)')
+      .eq('school_code', school_code)
+      .order('created_at', { ascending: false })
+      .limit(500)
+  );
 }
 
 /* ---------------- 사료 숨기기 / 사료 찾기 (버튼3, 학교코드 공유) ---------------- */
@@ -203,6 +216,7 @@ export async function getPracticeRankings({ school_code = null, limit = 20 } = {
     .from('practice_sessions')
     .select('*')
     .eq('mode', 20)
+    .eq('public_ranking', true)
     .order('total_score', { ascending: false })
     .limit(500);
 

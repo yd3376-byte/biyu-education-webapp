@@ -396,7 +396,30 @@ function renderNameEntry() {
     render();
   };
 
-  wrap.querySelector('#skip-btn').addEventListener('click', goPortfolio);
+  // 랭킹 등록 여부와 상관없이, 모든 시도는 교사가 검토할 수 있도록 항상 저장한다.
+  // public_ranking만 등록 여부에 따라 갈려서, 공개 랭킹에는 등록한 20문제 기록만 노출된다.
+  function recordSession(nickname, schoolCode, publicRanking) {
+    const answersArr = progress.order.map((qid) => {
+      const a = progress.answers[qid];
+      return { question_id: qid, answer: a.answer, stars: a.stars, score: a.total };
+    });
+    const bestAnswer = answersArr.reduce((best, a) => (a.score > (best?.score ?? -1) ? a : best), null);
+    return savePracticeSession({
+      nickname,
+      school_code: schoolCode,
+      mode: progress.mode,
+      total_score: total,
+      max_score: max,
+      best_answer: bestAnswer ? bestAnswer.answer : null,
+      answers: answersArr,
+      public_ranking: publicRanking
+    });
+  }
+
+  wrap.querySelector('#skip-btn').addEventListener('click', async () => {
+    await recordSession(getNickname(), getSchoolCode(), false);
+    goPortfolio();
+  });
 
   wrap.querySelector('#register-btn').addEventListener('click', async () => {
     const nick = wrap.querySelector('#pe-nick').value;
@@ -407,21 +430,8 @@ function renderNameEntry() {
     wrap.querySelector('#pe-school-err').textContent = schoolResult.ok ? '' : schoolResult.message;
     if (!nickResult.ok || !schoolResult.ok) return;
 
+    const { error } = await recordSession(nick.trim(), school.trim().toUpperCase(), progress.mode === 20);
     if (progress.mode === 20) {
-      const answersArr = progress.order.map((qid) => {
-        const a = progress.answers[qid];
-        return { question_id: qid, answer: a.answer, stars: a.stars, score: a.total };
-      });
-      const bestAnswer = answersArr.reduce((best, a) => (a.score > (best?.score ?? -1) ? a : best), null);
-      const { error } = await savePracticeSession({
-        nickname: nick.trim(),
-        school_code: school.trim().toUpperCase(),
-        mode: progress.mode,
-        total_score: total,
-        max_score: max,
-        best_answer: bestAnswer ? bestAnswer.answer : null,
-        answers: answersArr
-      });
       if (error) showToast('랭킹 등록에 실패했어. 그래도 계속 진행할게.', 'error');
       else showToast('랭킹에 등록됐어!', 'success');
     }
