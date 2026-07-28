@@ -24,7 +24,9 @@ function loadProgress() {
     notebook: [],
     exprFailCount: 0,
     classroomSentence: null,
-    catName: null
+    catName: null,
+    endingSentence: null,
+    endingFailCount: 0
   };
 }
 
@@ -236,7 +238,7 @@ function renderTraceScene(image, lines, onDone) {
 function render() {
   root.innerHTML = '';
 
-  if (progress.phase === 'coda' || progress.phase === 'done') {
+  if (progress.phase === 'coda' || progress.phase === 'ending' || progress.phase === 'done') {
     // bgm-dark는 정문 크로스페이드 때 이미 페이드아웃되어 멈춰 있다.
     // bgm-reunion은 여기서 끊지 않고 엔딩까지 계속 이어서 재생한다.
     document.body.classList.add('story-bright');
@@ -251,6 +253,7 @@ function render() {
     case 'classroom': renderClassroom(); break;
     case 'gate': renderGate(); break;
     case 'coda': renderCoda(); break;
+    case 'ending': renderEnding(); break;
     case 'done': renderDone(); break;
     default: renderIntro();
   }
@@ -657,12 +660,82 @@ async function playCoda(dialogue, lines) {
   await playLines(dialogue, lines);
 
   if (progress.codaIndex + 1 >= storyData.coda.length) {
-    progress.phase = 'done';
+    progress.phase = 'ending';
   } else {
     progress.codaIndex += 1;
   }
   saveProgress();
   render();
+}
+
+/* ---------------- 마지막 문제: 고양이의 기분을 비유로 표현하기 ---------------- */
+
+function renderEnding() {
+  const { dialogue } = makeStage();
+  playEndingTransition(dialogue);
+}
+
+async function playEndingTransition(dialogue) {
+  await typeText(dialogue, storyData.endingScene.transitionLine);
+  await waitForClick(dialogue);
+  renderEndingExpr();
+}
+
+function renderEndingExpr() {
+  const scene = storyData.endingScene;
+  root.innerHTML = '';
+  const wrap = document.createElement('div');
+
+  const sceneImg = document.createElement('div');
+  sceneImg.className = 'story-scene-bg place-bg';
+  sceneImg.style.backgroundImage = `url("${scene.image}")`;
+  wrap.appendChild(sceneImg);
+
+  const stage = document.createElement('div');
+  stage.className = 'story-stage';
+  const dialogue = document.createElement('div');
+  dialogue.className = 'story-dialogue';
+  dialogue.textContent = `"${scene.prompt}"`;
+  stage.appendChild(dialogue);
+  wrap.appendChild(stage);
+
+  const box = document.createElement('div');
+  box.className = 'expr-box card';
+  box.innerHTML = `
+    <p>${escapeHtml(scene.target)}을(를) 비유로 표현해보자.</p>
+    <textarea id="ending-expr-input" maxlength="80" placeholder="예: ~같이, ~처럼, 또는 '○○는 △△다'"></textarea>
+    <div class="expr-feedback" id="ending-expr-feedback"></div>
+    <button class="btn" id="ending-expr-submit" style="width:100%">말해주기</button>
+    <div class="expr-example" id="ending-expr-example" hidden></div>
+  `;
+  wrap.appendChild(box);
+  root.appendChild(wrap);
+
+  const input = box.querySelector('#ending-expr-input');
+  const feedback = box.querySelector('#ending-expr-feedback');
+  const exampleBox = box.querySelector('#ending-expr-example');
+
+  box.querySelector('#ending-expr-submit').addEventListener('click', () => {
+    const result = checkMetaphor(input.value);
+
+    if (result.ok) {
+      progress.endingSentence = input.value.trim();
+      progress.endingFailCount = 0;
+      progress.phase = 'done';
+      saveProgress();
+      render();
+      return;
+    }
+
+    progress.endingFailCount = (progress.endingFailCount || 0) + 1;
+    feedback.textContent = result.message;
+    feedback.className = 'expr-feedback error';
+    if (progress.endingFailCount >= 3) {
+      exampleBox.hidden = false;
+      exampleBox.textContent = `예시: "${scene.exampleSentence}"`;
+    }
+    saveProgress();
+  });
 }
 
 /* ---------------- 완료 화면 ---------------- */
@@ -677,6 +750,7 @@ function renderDone() {
       <div class="cat-vehicle">시현이가 지어준 이름이다.</div>
     </div>
     ${vehicle ? `<p class="hint" style="text-align:center;margin-top:10px;">교실에서 내가 남긴 말: "${escapeHtml(vehicle)}"</p>` : ''}
+    ${progress.endingSentence ? `<p class="hint" style="text-align:center;margin-top:6px;">지금 내 기분: "${escapeHtml(progress.endingSentence)}"</p>` : ''}
     <p style="text-align:center;margin-top:16px;">저장 완료! 우리 반 친구들이 지어준 이름도 구경해볼까?</p>
     <a class="btn" style="display:block;text-align:center;margin-top:8px;" href="names.html">우리 반이 지어준 이름들 보기</a>
     <a class="btn btn-ghost" style="display:block;text-align:center;margin-top:8px;" href="story.html?replay=1">이야기 처음부터 다시보기</a>
@@ -761,6 +835,11 @@ async function startReplay() {
   for (const scene of storyData.coda) {
     await replayImage(scene.image, scene.lines);
   }
+
+  const endingScene = storyData.endingScene;
+  const endingSentence = progress.endingSentence || endingScene.exampleSentence;
+  await replayImage(null, [endingScene.transitionLine]);
+  await replayImage(endingScene.image, [`"${endingScene.prompt}"`, `→ "${endingSentence}"`]);
 
   renderDone();
 }

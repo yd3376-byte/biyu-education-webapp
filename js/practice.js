@@ -482,9 +482,6 @@ function renderPortfolio() {
         <button class="btn btn-ghost" id="print-btn">🖨 인쇄하기</button>
         <button class="btn" id="view-ranking-btn">🏆 랭킹 보기</button>
       </div>
-      <div class="row-btns">
-        <a class="btn btn-ghost" href="index.html">🏠 메인으로</a>
-      </div>
     </div>
     <div class="portfolio-cards" id="portfolio-cards">${cardsHtml}</div>
   `;
@@ -530,7 +527,6 @@ function renderRanking() {
     <div id="rank-list">불러오는 중...</div>
     <div class="row-btns">
       <button class="btn btn-ghost" id="back-portfolio-btn">${backLabel}</button>
-      <a class="btn btn-ghost" href="index.html">🏠 메인으로</a>
     </div>
   `;
   root.appendChild(wrap);

@@ -142,5 +142,13 @@
     { "image": "assets/img/home-bed.png", "lines": ["여긴 어디지?", "너무 따뜻하다.", "나를 위한 방석과 물, 밥 다 있네.", "여긴 천국인가?"] },
     { "image": "assets/img/home-play.png", "lines": ["아이와 함께하는 시간이 늘었다.", "이제 항상 곁에 있을 수 있다.", "아이의 흔적이 가득한 이 방이 너무나 좋다."] },
     { "image": "assets/img/home-sleep.png", "lines": ["우리는 이제 마치 정말 가족처럼", "따스한 햇살에 같이 눈을 뜨며", "서로의 온기를 느끼며 같이 잠에 든다.", "이제 나는 내일이 아니다.", "이제 나는 오늘을 살며 진짜 나의 이름을 가지고 시현이의 곁에 있다."] }
-  ]
+  ],
+
+  "endingScene": {
+    "image": "assets/img/home-sleep.png",
+    "transitionLine": "이 순간, 나의 기분을 말로 남겨두고 싶다.",
+    "prompt": "지금 고양이의 기분을 비유적 표현을 사용하여 표현해보세요.",
+    "target": "지금 내 기분",
+    "exampleSentence": "지금 내 기분은 따뜻한 햇살 같다."
+  }
 }
